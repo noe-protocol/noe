@@ -1,14 +1,14 @@
 # Noe
 
-![Tests](https://img.shields.io/badge/tests-80%2F80_passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-82%2F82_passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 
 **A Deterministic Safety Kernel for Autonomous Systems.**
 
-Noe acts as a deterministic safety boundary between untrusted proposers (humans, LLMs, planners) and critical actuators. Unlike probabilistic models, Noe evaluates each proposal to a either a truth value (True/False/Undefined) or a typed Error. Only True can permit execution. False, Undefined, and Error are all non-execution and are distinguishable in the provenance record.
+Noe acts as a deterministic safety boundary between untrusted proposers (humans, LLMs, planners) and critical actuators. Unlike probabilistic models, Noe evaluates each proposal to either a truth value (True/False/Undefined) or a typed Error. Only True can permit execution. False, Undefined, and Error are all non-execution and are distinguishable in the provenance record.
 
-Given the same context, every valid Noe chain has:
+Given the same **chain + registry + semantics + C_safe**, every valid Noe chain has:
 - **Exactly one parse**
 - **Exactly one meaning** (AST + operator semantics)
 - **Exactly one evaluation outcome** across compliant runtimes
@@ -26,7 +26,7 @@ Modern autonomous systems fail for predictable reasons:
 | Stale sensor data | Silent failures | ✅ Explicit `ERR_STALE_CONTEXT` |
 | Beliefs treated as facts | Implicit assumptions | ✅ Grounded epistemics |
 | LLM hallucinations → actuators | Hope-based validation | ✅ Untrusted proposer + grounding checks + Undefined ⇒ non-execution |
-| Agent liability | "Black box" decisions | ✅ Provenance record (Cryptographic hashes + append-only log) |
+| Agent liability | "Black box" decisions | ✅ Provenance record (SHA-256 hashes + append-only log) |
 
 **In practice:** Planners/LLMs propose → Noe gates → ROS2/controllers execute.
 
@@ -47,7 +47,7 @@ Noe is not a planner, a controller, or a robotics middleware. It is a determinis
 
 <br />
 
-## Threat Model
+## Threat Model (Summary)
 
 **Untrusted:** Proposers (LLMs, planners) may hallucinate or lie; upstream sensors may be wrong (garbage in, garbage out).  
 **Guaranteed:** Deterministic verdict given matching inputs; explicit failure modes (`ERR_*` codes); reproducible replay artifacts (hashes over chain and C_safe).  
@@ -67,10 +67,10 @@ Strict runtime validation enforces grounding checks, staleness detection, and ty
 
 **What must match for identical outcomes:**
 
-- **Canonical chain encoding**: Same glyph sequence (after normalization)
+- **Canonical chain encoding**: NFKC normalization of glyph sequence
 - **Registry version**: Same operator definitions and semantics (versioned via hash)
 - **Semantics version**: Same NIP-005 logic (Strong Kleene, K3 truth tables)
-- **Context snapshot**: Same `C_safe` after canonicalization (NFKC normalization, sorted keys, SHA-256)
+- **Context snapshot hash**: Canonical JSON (sorted keys, stable encoding) → SHA-256 of `C_safe`
 - **Runtime mode**: `strict` (no implicit defaults, no seed values)
 - **Error taxonomy**: Defined error codes (`ERR_STALE_CONTEXT`, `ERR_CONTEXT_INCOMPLETE`, etc.)
 
@@ -152,17 +152,36 @@ result = run_noe_logic(chain, context, mode="partial")
 
 ## Performance
 
-| Metric | Target | Measured | Status |
-|:--------|:--------|:----------|:--------|
-| Supervisory loop (parse+validate+eval+hash, amortized via caching) | 50Hz | **0.15ms/cycle** | ✅ 13x margin |
-| Context update hashing (incremental) | 10Hz | 0.97ms avg, 2.78ms P99 | ✅ <3ms |
-| Cross-agent determinism | 100% | **100%** (K3 verified) | ✅ Verified by NIP-011 conformance |
-| Conformance tests | 80/80 | **80/80 passing** | ✅ Reproducible |
+### Python Reference Runtime (v1.0)
 
-**Measurement context:** macOS, Python 3.9, 500-entity contexts (49KB), hash caching enabled. 
-Reference implementation only (Python reference) — production deployments should profile on target hardware.
+This repository ships a **Python reference runtime**. It prioritizes:
+- **Correctness**
+- **Deterministic replay**
+- **Conformance coverage**
+- **Clear audit artifacts**
 
-**Reproduce:** `python3 benchmarks/bridge_overhead.py` (measures parse + validate + eval + hash)
+over real-time performance.
+
+It is intentionally written in a way that is easy to read and validate against the NIP specifications, even when that costs latency.
+
+**Measured (representative):**
+- Context snapshot + canonical hash: **4–5ms** (tens of KB contexts, hundreds of entities)
+- Parse + validate + eval: **sub-millisecond** when cached and context is already safe-projected
+
+**What this is suitable for in production:**
+- ✅ 5–20Hz supervisor gates (deliberative decision checks)
+- ✅ Audit and provenance generation
+- ✅ Replay and certification pipelines
+- ✅ Integration glue around ROS2 and higher-level planners
+
+**What this is NOT suitable for:**
+- ❌ Hard real-time control loops
+- ❌ Actuator-adjacent safety enforcement with strict jitter bounds
+- ❌ High-frequency reactive systems where tail latency matters
+
+**The bottleneck** is not "Python is slow" in the abstract. It is predictable: dict materialization, object allocation, and hashing costs dominate at scale.
+
+**Reproduce:** `python3 benchmarks/bridge_overhead.py`
 
 [Full benchmarks →](benchmarks/)
 
@@ -212,6 +231,8 @@ flowchart TD
 
 **Key Properties:**
 - **Three-valued logic (K3)**: `True`, `False`, `Undefined` → no silent coercion
+- **Conditional guard**: `khi` operator (action fires only if condition evaluates to `True`)
+- **Epistemic operators**: `shi` (knowledge), `vek` (belief), `sha` (certainty)
 - **2-stage context pipeline**: `C_rich → π_safe → C_safe` (all evaluation uses `C_safe`)
 - **Strict mode**: No implicit defaults, no fabricated grounding
 - **Provenance**: SHA-256 hashes for context + actions + `context_reference` (pointer to stored C_safe snapshot for audit/replay)
@@ -236,7 +257,7 @@ nips/                   # Specification documents
 
 - **[NIP-005: Core Semantics](nips/nip_005.md)** - Grammar + K3 logic
 - **[NIP-009: Context Model](nips/nip_009.md)** - `C_root`, `C_domain`, `C_local`
-- **[NIP-011: Conformance](tests/nip011/)** - 80 test vectors
+- **[NIP-011: Conformance](tests/nip011/)** - 75 test vectors
 - **[NIP-016: Epistemic Mapping](nips/nip_016_epistemic_mapping.md)** - Confidence scores → modal facts
 
 <br />
@@ -252,9 +273,68 @@ python3 run_conformance.py
 
 Expected output:
 ```
-Total: 80, Passed: 80, Failed: 0
+Total: 75, Passed: 75, Failed: 0
 ✅ ALL NIP-011 TESTS PASSED
 ```
+
+**Full test suite:** 82/82 passing (75 NIP-011 conformance + 7 parser adversarial)
+
+<br />
+
+## Production Deployment Model
+
+Noe is designed to be deployed as a **two-tier system**:
+
+### 1. Safety Kernel Runtime (compiled: Rust/C++ required)
+
+- Runs close to actuators and real-time constraints
+- Enforces guard evaluation, staleness, grounding, and the `Undefined ⇒ non-execution` invariant
+- Must provide tight latency and jitter guarantees
+- **Must pass NIP-011 conformance vectors to be considered Noe-compatible**
+
+### 2. Orchestration and Audit Layer (Python is practical)
+
+- Runs alongside planners, LLM proposers, and supervisory logic
+- Generates and stores provenance artifacts, certificates, and replay bundles
+- Drives conformance testing and serves as the **"spec reference" implementation**
+
+**Boundary enforcement:** In production, the compiled kernel is the only component permitted to authorize actions. Python may propose, audit, replay, and orchestrate, but it cannot directly trigger actuators.
+
+This split is normal in robotics and safety systems: high-level orchestration can be dynamic and slower, but actuator-adjacent enforcement must be compiled and predictable.
+
+<br />
+
+## Known Limitations & Roadmap
+
+### v1.0 Reference Implementation Limitations (Python)
+
+- **Snapshot cost**: Full context merging and canonical hashing are O(N) in context size
+- **Allocation overhead**: Python object churn dominates at larger contexts
+- **Jitter**: Python cannot credibly guarantee tight real-time bounds under load
+- **No structural sharing**: Each snapshot is independent to preserve immutability and replay clarity
+
+### v1.1 Python Optimization Path (Quality-of-life, not a substitute for C++)
+
+**Target:** Reduce snapshot overhead for higher-rate supervisor loops, without changing semantics.
+
+**Approach:**
+- Lazy merged view (no per-tick merged dict)
+- Path-selective π_safe extraction (only AST-required paths)
+- Rebuild local context per tick (avoid deep-copy)
+
+This improves throughput for orchestration and supervisor use cases. **It does not change the fundamental reality:** Python remains the reference and orchestration tier, not the actuator-tier safety kernel.
+
+### Production Kernel (Rust/C++)
+
+The production-grade Noe runtime should be implemented in **Rust or C++** for:
+- Deterministic latency and bounded jitter
+- Efficient structural sharing (copy-on-write)
+- Predictable memory behavior
+- Fast canonical hashing
+
+**Requirement:** Any production port is only valid if it passes the same conformance vectors and produces identical outputs for identical inputs under the Noe determinism contract.
+
+> **Roadmap:** See [ROADMAP.md](ROADMAP.md) for Rust/C++ kernel implementation timeline and contribution opportunities.
 
 <br />
 
