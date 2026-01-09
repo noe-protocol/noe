@@ -1,12 +1,12 @@
 # Noe
 
-![Tests](https://img.shields.io/badge/tests-82%2F82_passing-brightgreen)
+![Tests](https://img.shields.io/badge/conformance-60%2F60_passing-brightgreen)
 ![License](https://img.shields.io/badge/license-Apache%202.0-blue)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 
-**A Deterministic Safety Kernel for Autonomous Systems.**
+**A Deterministic Decision Kernel for Autonomous Systems.**
 
-Noe acts as a deterministic safety boundary between untrusted proposers (humans, LLMs, planners) and critical actuators. Unlike probabilistic models, Noe evaluates each proposal to either a truth value (True/False/Undefined) or a typed Error. Only True can permit execution. False, Undefined, and Error are all non-execution and are distinguishable in the provenance record.
+Noe acts as a deterministic decision enforcement boundary between untrusted proposers (humans, LLMs, planners) and critical actuators for embodied AI. Unlike probabilistic models, Noe evaluates each proposal to either a truth value (True/False/Undefined) or a typed Error. Only True can permit execution. False, Undefined, and Error are all non-execution and are distinguishable in the provenance record. Noe is not a control loop. It gates high-level decisions; a lower-level controller/reflex layer is responsible for keeping the system safe when actions are blocked.
 
 Given the same **chain + registry + semantics + C_safe**, every valid Noe chain has:
 - **Exactly one parse**
@@ -34,7 +34,7 @@ Modern autonomous systems fail for predictable reasons:
 
 ## Comparison (What Noe Is and Isn't)
 
-Noe is not a planner, a controller, or a robotics middleware. It is a deterministic **decision gate** with explicit epistemics.
+Noe is not a planner, a controller, or a robotics middleware. It is a deterministic **decision kernel** with explicit epistemics.
 
 | System | What it's good at | Where Noe complements it |
 |:---|:---|:---|
@@ -53,13 +53,46 @@ Noe is not a planner, a controller, or a robotics middleware. It is a determinis
 **Guaranteed:** Deterministic verdict given matching inputs; explicit failure modes (`ERR_*` codes); reproducible replay artifacts (hashes over chain and C_safe).  
 **NOT solved:** Perception accuracy, planning optimality, or liveness. Noe gates; other layers implement recovery.
 
+
+### Liability Infrastructure
+
+Noe makes agent decisions replayable and auditable. For each proposal, it produces a deterministic verdict plus an integrity-protected record (chain, `C_safe`, result, hashes). This supports incident investigation, compliance workflows, and insurer-grade logging.
+
+**What Noe provides:**
+- Deterministic evaluation: identical inputs → identical verdict
+- Cryptographic integrity: tamper-evident provenance hashes
+- Replay capability: re-evaluate past decisions from frozen context
+
+**What Noe does NOT provide:**
+- Guarantees of perception accuracy (sensor correctness is upstream)
+- System-level safety guarantees (liveness, fault tolerance handled by other layers)
+- Legal liability determination (Noe generates evidence, not verdicts on culpability)
+
+**Incident analysis:** Noe can demonstrate the policy was evaluated correctly relative to the recorded context and can help isolate whether a failure is upstream perception, stale context, or policy logic. It does not determine legal liability.
+
 See [THREAT_MODEL.md](THREAT_MODEL.md) for adversary model, trust boundaries, and security limits.
 
 <br />
 
-## Deterministic Runtime Validator  
-Strict runtime validation enforces grounding checks, staleness detection, and typed epistemics (`shi` / `vek` / `sha`). Unsafe, inconsistent, or undefined conditions trigger automatic non-execution. Not formally verified, but deterministically reproducible.
+## Epistemic Operators: Syntactic Type System
 
+Noe's epistemic operators (`shi`/`vek`/`sha`) enforce **explicit classification at the grammar level**, not deep reasoning:
+
+- `shi @safe`: Action fires only if `@safe` has backing in `modal.knowledge`
+- `vek @safe`: Action can fire on belief (weaker guarantee)
+- `sha @safe`: Action requires certainty
+
+**What Noe does NOT do:**
+- Verify sensor provenance automatically
+- Reason about knowledge philosophically  
+- Infer confidence from raw data
+
+**What Noe DOES do:**
+- Force engineers to classify each variable as knowledge/belief/certainty
+- Prevent accidental treatment of 60% confidence as fact
+- Make epistemic assumptions explicit in the decision chain
+
+This is a **syntactic type system** that prevents lazy engineering, not AI-based epistemic reasoning.
 
 <br />
 
@@ -94,7 +127,26 @@ Undefined → non-execution
 Error → non-execution
 ```
 
-<br />
+### Why Strong Kleene (K3) Logic?
+
+Noe uses **K3** (Strong Kleene) three-valued logic, not Weak Kleene or boolean logic.
+
+**K3 semantics:**
+- `True AND Undefined = Undefined` (conservative)
+- `True OR Undefined = True` (optimistic)
+- `NOT Undefined = Undefined` (propagates)
+
+**Rationale:**
+- **Emergency stop:** `(@stop_button) ur (@sensor_glitch)` 
+  - If stop button is True, action SHOULD fire regardless of sensor state
+  - Weak Kleene would block valid emergency commands due to unrelated sensor failures
+
+**Safety pattern:**
+- **Critical guards MUST use conjunctions:** `shi @safe an nai @obstacle`
+- **Disjunctions are for fallbacks only:** `@primary_sensor ur @backup_sensor`
+- **Guard rule:** If a condition authorizes motion, do not use `ur` unless each disjunct independently implies safety under strict completeness requirements.
+
+> **Linting Rule:** In strict mode, `ur` inside a `khi` guard triggers a warning by default and should be treated as an error unless explicitly allowlisted.
 
 ## Example
 
@@ -113,9 +165,12 @@ context = {
         "@goal": {"position": [5, 0]}
     },
     "spatial": {
-        "thresholds": {"near": 1.0, "far": 5.0}
+        "thresholds": {
+            "near_um": 1000000,  # 1.0m in micrometers
+            "far_um": 5000000    # 5.0m in micrometers
+        }
     },
-    "temporal": {"now": 1000, "max_skew_ms": 100},
+    "temporal": {"now_us": 1000000, "max_skew_us": 100000},  # microseconds
     "modal": {
         "knowledge": {"@safe_zone": True},  # Epistemic backing for shi
         "belief": {},
@@ -150,7 +205,83 @@ result = run_noe_logic(chain, context, mode="partial")
 
 <br />
 
-## Performance
+## 🛡️ Decision Kernel v1.0 (Verified)
+
+Noe v1.0 implements a centralized **decision kernel** that guarantees the following properties (verified by `tests/test_safety_kernel_invariants.py`):
+
+1. **Centralized Finalization**: Every action constructor (`mek`, `men`, `vus`, `vel`, `noq`) routes through a single `_finalize_action` choke point.
+2. **Deterministic Hashing**:
+    - `action_hash` captures **proposal identity** (stable across contexts/executions).
+    - `event_hash` captures **execution identity** (includes outcomes).
+    - `event_hash == action_hash` iff no outcome fields are present.
+3. **Provenance Completeness**: `provenance.context_hash` matches `meta.context_hash` for the same evaluation.
+4. **DAG Integrity**: Action DAGs use `action_hash` as stable node IDs; cycle detection is enforced in strict mode.
+
+### Verification Suite
+- `python tests/nip011/run_conformance.py` → **60/60 PASS**
+
+## 🔒 Determinism Contract
+
+Noe v1.0 guarantees output determinism based on canonical inputs:
+
+1. **Chain hashing:** Every Noe chain has a unique canonical text representation. Hash-identical chains are semantically identical.
+2. **Context snapshot hash:** SHA-256(RFC8785_CanonicalJSON(C_safe))
+3. **Action/Event hashing:** See [NIP-005](nips/nip_005_action_hashing.md) for the deterministic hashing spec.
+
+**Determinism guarantees:**
+- Platform-independent: Same inputs → same outputs on x86, ARM, WASM
+- Language-independent: Python, Rust, C++ produce identical results (given compliant implementations)
+- Replay stability: Re-evaluating a chain against the same context always produces the same outcome
+
+**Scope:** Bit-perfect determinism is guaranteed at the kernel boundary: identical C_safe (int64-only) + identical chain/registry/semantics ⇒ identical outputs. Adapter quantization is normative when its outputs are hashed into C_safe.
+
+<br />
+### Numeric Policy (Strict)
+
+**Reality:** Upstream sensors and planners emit floats.
+
+**v1.0 Decision Kernel contract:** `C_safe` contains **only canonical int64 values** for safety-relevant quantities.
+
+**Quantization boundary:** Sensor adapters MUST quantize floats → int64 **before** submitting to `π_safe`.  
+The decision kernel does NOT perform quantization - it validates that incoming values are already integers.
+
+**Allowed types in C_safe:**
+- `true` / `false`
+- `string` (UTF-8)
+- `integer` in signed 64-bit range: `[-2^63, 2^63 - 1]`
+- arrays/objects composed only of the above
+
+**Validation (not quantization):**
+- **Deep validation:** Kernel rejects any JSON float anywhere in `C_safe` (including nested arrays/objects)
+- If a safety-relevant field is a float → `ERR_INVALID_NUMBER`
+- If an integer is outside int64 range → `ERR_INTEGER_RANGE`
+- `NaN` / `Inf` anywhere → `ERR_INVALID_NUMBER`
+
+**Sensor adapter responsibility:**
+- Quantize floats using deterministic decimal arithmetic (e.g., Python `Decimal`, Rust `rust_decimal`)
+- **Input format:** Quantize from raw decimal string (not binary float), whenever possible
+- **Rounding mode:** Round-to-nearest, ties-to-even (IEEE 754 default)
+- **Standard scales:** 1e6 for position/velocity (micrometers, µm/s), timestamps in microseconds
+- **Full specification:** See [NIP-009 §3](nips/nip_009.md#3-numeric-policy-strict-integer-only-c_safe) for:
+  - Accepted numeric string formats (decimal, scientific notation, edge cases)
+  - Exact quantization formula with examples
+  - Adapter conformance table (normative test vectors)
+  - Float rejection semantics
+
+**Adapter conformance requirement:**
+- **Adapters are part of the determinism contract** when their outputs are hashed into `C_safe`
+- A compliant Noe deployment must produce `C_safe` integers via the adapter quantization spec (NIP-009)
+- Different adapter implementations must produce identical `C_safe` for identical raw sensor data
+
+**Why push quantization upstream:**
+- Eliminates float arithmetic from decision kernel (zero portability risk)
+- Sensor adapters choose their decimal library
+- Decision kernel stays simple: type validation only
+- Testable boundary: adapters prove quantization correctness via conformance vectors
+
+**Canonicalization and hashing:**
+- `context_hash = SHA-256( RFC8785_CanonicalJSON(C_safe) )`
+- `C_safe` contains ONLY int64 → perfect cross-platform determinism
 
 ### Python Reference Runtime (v1.0)
 
@@ -159,31 +290,9 @@ This repository ships a **Python reference runtime**. It prioritizes:
 - **Deterministic replay**
 - **Conformance coverage**
 - **Clear audit artifacts**
-
 over real-time performance.
 
 It is intentionally written in a way that is easy to read and validate against the NIP specifications, even when that costs latency.
-
-**Measured (representative):**
-- Context snapshot + canonical hash: **4–5ms** (tens of KB contexts, hundreds of entities)
-- Parse + validate + eval: **sub-millisecond** when cached and context is already safe-projected
-
-**What this is suitable for in production:**
-- ✅ 5–20Hz supervisor gates (deliberative decision checks)
-- ✅ Audit and provenance generation
-- ✅ Replay and certification pipelines
-- ✅ Integration glue around ROS2 and higher-level planners
-
-**What this is NOT suitable for:**
-- ❌ Hard real-time control loops
-- ❌ Actuator-adjacent safety enforcement with strict jitter bounds
-- ❌ High-frequency reactive systems where tail latency matters
-
-**The bottleneck** is not "Python is slow" in the abstract. It is predictable: dict materialization, object allocation, and hashing costs dominate at scale.
-
-**Reproduce:** `python3 benchmarks/bridge_overhead.py`
-
-[Full benchmarks →](benchmarks/)
 
 <br />
 
@@ -257,7 +366,7 @@ nips/                   # Specification documents
 
 - **[NIP-005: Core Semantics](nips/nip_005.md)** - Grammar + K3 logic
 - **[NIP-009: Context Model](nips/nip_009.md)** - `C_root`, `C_domain`, `C_local`
-- **[NIP-011: Conformance](tests/nip011/)** - 75 test vectors
+- **[NIP-011: Conformance](tests/nip011/)** - 60/60 vectors passing
 - **[NIP-016: Epistemic Mapping](nips/nip_016_epistemic_mapping.md)** - Confidence scores → modal facts
 
 <br />
@@ -273,11 +382,30 @@ python3 run_conformance.py
 
 Expected output:
 ```
-Total: 75, Passed: 75, Failed: 0
-✅ ALL NIP-011 TESTS PASSED
+Executed: 60, Passed: 60, Failed: 0
+✅ ALL EXECUTED TESTS PASSED
 ```
 
-**Full test suite:** 82/82 passing (75 NIP-011 conformance + 7 parser adversarial)
+**NIP-011 Conformance Coverage:**
+- Adversarial inputs: 10 tests
+- Epistemic operators: 11 tests  
+- Cross-agent coordination: 5 tests
+- Miscommunication prevention: 6 tests
+- Staleness detection: 4 tests
+- Spatial operators: 2 tests
+- Demonstratives: 5 tests
+- Literals: 3 tests
+- Audit subsystem: 2 tests
+- Context handling: 3 tests
+- Delivery actions: 1 test
+- Request actions: 1 test
+- Strict mode: 1 test
+- Strict actions: 2 tests
+- Ungrounded references: 4 tests
+
+**Total: 60 conformance tests passing**
+
+> **Normative Standard:** The NIP specifications plus the NIP-011 conformance vectors define the standard. The Python runtime is an executable reference, not the standard itself.
 
 <br />
 
@@ -285,7 +413,7 @@ Total: 75, Passed: 75, Failed: 0
 
 Noe is designed to be deployed as a **two-tier system**:
 
-### 1. Safety Kernel Runtime (compiled: Rust/C++ required)
+### 1. Decision Kernel Runtime (Rust/C++ required)
 
 - Runs close to actuators and real-time constraints
 - Enforces guard evaluation, staleness, grounding, and the `Undefined ⇒ non-execution` invariant
@@ -300,7 +428,7 @@ Noe is designed to be deployed as a **two-tier system**:
 
 **Boundary enforcement:** In production, the compiled kernel is the only component permitted to authorize actions. Python may propose, audit, replay, and orchestrate, but it cannot directly trigger actuators.
 
-This split is normal in robotics and safety systems: high-level orchestration can be dynamic and slower, but actuator-adjacent enforcement must be compiled and predictable.
+This split is normal in robotics and safety systems: high-level orchestration can be dynamic and slower, but actuator-adjacent decision enforcement must be compiled and predictable.
 
 <br />
 
@@ -322,7 +450,7 @@ This split is normal in robotics and safety systems: high-level orchestration ca
 - Path-selective π_safe extraction (only AST-required paths)
 - Rebuild local context per tick (avoid deep-copy)
 
-This improves throughput for orchestration and supervisor use cases. **It does not change the fundamental reality:** Python remains the reference and orchestration tier, not the actuator-tier safety kernel.
+This improves throughput for orchestration and supervisor use cases. **It does not change the fundamental reality:** Python remains the reference and orchestration tier, not the actuator-tier decision kernel.
 
 ### Production Kernel (Rust/C++)
 
@@ -354,7 +482,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 Apache 2.0 - see [LICENSE](LICENSE)
 
-<br />
 
 ## Contact
 
