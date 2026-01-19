@@ -1,0 +1,123 @@
+[
+    {
+        "id": "AUD_001",
+        "description": "men: Provenance check (memory/audit)",
+        "mode": "strict",
+        "chain": "men @action nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@action": {
+                        "type": "move",
+                        "timestamp": 950
+                    }
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 100
+                },
+                "delivery": {},
+                "audit": {
+                    "log": [
+                        {
+                            "action": "move",
+                            "timestamp": 950,
+                            "agent": "robot_1"
+                        }
+                    ]
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1000
+            }
+        },
+        "expected": {
+            "domain": "action",
+            "value": {
+                "type": "action",
+                "verb": "men",
+                "target": "action",
+                "kind": "audit"
+            }
+        }
+    },
+    {
+        "id": "AUD_002",
+        "description": "men: Missing audit subsystem -> ERR_CONTEXT_INCOMPLETE",
+        "mode": "strict",
+        "chain": "men @event nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@event": {
+                        "id": "evt_001"
+                    }
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 100
+                },
+                "delivery": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_CONTEXT_INCOMPLETE"
+        }
+    }
+]

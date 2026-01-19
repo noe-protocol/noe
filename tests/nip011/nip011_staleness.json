@@ -1,0 +1,223 @@
+[
+    {
+        "id": "STALE_001",
+        "description": "Fresh context",
+        "mode": "strict",
+        "chain": "true nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 50
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 980
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "STALE_002",
+        "description": "Stale context",
+        "mode": "strict",
+        "chain": "true nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 20
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 0
+            },
+            "temporal": {
+                "now": 2000,
+                "max_skew_ms": 100
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_CONTEXT_STALE"
+        }
+    },
+    {
+        "id": "TEMPORAL_INCOMPLETE_001",
+        "description": "Missing temporal fields -> ERR_CONTEXT_INCOMPLETE",
+        "mode": "strict",
+        "chain": "true nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": null
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 0
+            },
+            "temporal": {
+                "now": 2000,
+                "max_skew_ms": 100
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_CONTEXT_INCOMPLETE"
+        }
+    },
+    {
+        "id": "STALE_004",
+        "description": "Operator under stale context",
+        "mode": "strict",
+        "chain": "dia nel dai nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 20
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "distance": 5
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 0
+            },
+            "temporal": {
+                "now": 2000,
+                "max_skew_ms": 100
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_CONTEXT_STALE"
+        }
+    }
+]

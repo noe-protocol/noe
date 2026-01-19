@@ -1,0 +1,201 @@
+[
+    {
+        "id": "UNGROUNDED_001",
+        "description": "Missing literal in guard -> undefined -> no action",
+        "mode": "strict",
+        "chain": "shi @foo khi sek mek @halt sek nek",
+        "context": {
+            "root": {
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 0
+                },
+                "timestamp": 1000,
+                "literals": {},
+                "audit": {},
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 5.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 5.0
+                    }
+                }
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_LITERAL_MISSING"
+        }
+    },
+    {
+        "id": "UNGROUNDED_002",
+        "description": "Demonstrative without entities -> undefined -> no action",
+        "mode": "strict",
+        "chain": "dia nel dai khi sek mek @halt sek nek",
+        "context": {
+            "audit": {},
+            "local": {
+                "timestamp": 1000
+            },
+            "root": {
+                "spatial": {
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 5.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 5.0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 0
+                },
+                "timestamp": 1000,
+                "literals": {
+                    "@halt": {
+                        "domain": "action",
+                        "value": {
+                            "type": "action",
+                            "verb": "halt",
+                            "target": "now"
+                        }
+                    }
+                },
+                "demonstratives": {
+                    "proximal": "auto"
+                },
+                "entities": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                }
+            },
+            "domain": {}
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_CONTEXT_INCOMPLETE"
+        }
+    },
+    {
+        "id": "UNGROUNDED_003",
+        "description": "Spatial with missing positions -> undefined",
+        "mode": "strict",
+        "chain": "nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 5.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 5.0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_PARSE_FAILED"
+        }
+    },
+    {
+        "id": "UNGROUNDED_004",
+        "description": "noq with ungrounded RHS -> undefined",
+        "mode": "strict",
+        "chain": "noq @missing_target nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 5.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 5.0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_LITERAL_MISSING"
+        }
+    }
+]

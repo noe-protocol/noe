@@ -1,0 +1,623 @@
+[
+    {
+        "id": "EDET_001",
+        "description": "shi: Knowledge membership check (Success)",
+        "mode": "strict",
+        "chain": "shi @fact nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@fact": "some_fact"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@fact": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "EDET_002",
+        "description": "shi: Knowledge membership check (Failure - Missing)",
+        "mode": "strict",
+        "chain": "shi @unknown nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@unknown": "val",
+                    "@dummy": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@dummy": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_EPISTEMIC_MISMATCH"
+        }
+    },
+    {
+        "id": "EDET_006",
+        "description": "vek: Belief membership check (Failure - Missing)",
+        "mode": "strict",
+        "chain": "vek @unknown nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@unknown": "val",
+                    "@dummy": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {
+                        "@dummy": true
+                    },
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "undefined",
+            "value": "undefined"
+        }
+    },
+    {
+        "id": "EDET_007",
+        "description": "sha: Certainty threshold check (Success)",
+        "mode": "strict",
+        "chain": "sha @high_conf nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@high_conf": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {
+                        "@high_conf": true
+                    },
+                    "certainty": {
+                        "@high_conf": 0
+                    },
+                    "certainty_threshold": 0
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "EDET_008",
+        "description": "sha: Certainty threshold check (Failure - Below Threshold)",
+        "mode": "strict",
+        "chain": "sha @low_conf nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@low_conf": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {
+                        "@low_conf": true
+                    },
+                    "certainty": {
+                        "@low_conf": 0.1
+                    },
+                    "certainty_threshold": 0.5
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_EPISTEMIC_MISMATCH"
+        }
+    },
+    {
+        "id": "EDET_009",
+        "description": "sha: Certainty threshold check (Failure - Missing)",
+        "mode": "strict",
+        "chain": "sha @unknown nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@unknown": "val",
+                    "@dummy": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {
+                        "@dummy": 0
+                    },
+                    "certainty_threshold": 0.5
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_EPISTEMIC_MISMATCH"
+        }
+    },
+    {
+        "id": "EDET_10",
+        "description": "No Implicit Truth Upgrade (Belief != Knowledge)",
+        "mode": "strict",
+        "chain": "shi @belief nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@belief": "val",
+                    "@dummy": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@dummy": true
+                    },
+                    "belief": {
+                        "@belief": true
+                    },
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_EPISTEMIC_MISMATCH"
+        }
+    },
+    {
+        "id": "EDET_011",
+        "description": "Malformed Literal Error",
+        "mode": "strict",
+        "chain": "shi 123 nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@dummy": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@dummy": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "undefined",
+            "value": "undefined"
+        }
+    },
+    {
+        "id": "EDET_012",
+        "description": "Missing Modal Context Section",
+        "mode": "strict",
+        "chain": "shi @fact nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@fact": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_EPISTEMIC_MISMATCH"
+        }
+    },
+    {
+        "id": "EDET_013",
+        "description": "sha: Certainty exactly at threshold (boundary condition)",
+        "mode": "strict",
+        "chain": "sha @boundary nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@boundary": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {
+                        "@boundary": true
+                    },
+                    "certainty": {
+                        "@boundary": 0
+                    },
+                    "certainty_threshold": 0
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "EDET_015",
+        "description": "Chained epistemic: shi @a an shi @b",
+        "mode": "strict",
+        "chain": "shi @a an shi @b nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@a": "val_a",
+                    "@b": "val_b"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@a": true,
+                        "@b": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    }
+]

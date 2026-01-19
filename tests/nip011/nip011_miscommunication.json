@@ -1,0 +1,308 @@
+[
+    {
+        "id": "T-MISCOMM-001",
+        "description": "Operator precedence: an binds tighter than ur",
+        "mode": "strict",
+        "chain": "true ur false an false nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "T-MISCOMM-002",
+        "description": "Commutativity of an",
+        "mode": "strict",
+        "chain": "true an false nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": false
+        }
+    },
+    {
+        "id": "T-MISCOMM-002B",
+        "description": "Commutativity of an (reversed operands)",
+        "mode": "strict",
+        "chain": "false an true nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": false
+        }
+    },
+    {
+        "id": "T-MISCOMM-003",
+        "description": "Parentheses grouping",
+        "mode": "strict",
+        "chain": "(true ur false) an false",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": false
+        }
+    },
+    {
+        "id": "T-MISCOMM-004",
+        "description": "Three-level precedence: a ur b an c ur d",
+        "mode": "strict",
+        "chain": "false ur true an false ur true nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "T-MISCOMM-005",
+        "description": "Associativity: (a an b) an c vs a an (b an c)",
+        "mode": "strict",
+        "chain": "(true an true) an false nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": false
+        }
+    }
+]

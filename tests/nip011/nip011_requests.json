@@ -1,0 +1,57 @@
+[
+    {
+        "id": "REQ_003",
+        "description": "noq: Invalid RHS (not action)",
+        "mode": "strict",
+        "chain": "@agent noq true nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@agent": true
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_ACTION_MISUSE"
+        }
+    }
+]

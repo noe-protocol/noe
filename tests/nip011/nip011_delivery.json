@@ -1,0 +1,56 @@
+[
+    {
+        "id": "DEL_003",
+        "description": "vus: Missing delivery subsystem -> ERR_DELIVERY_MISMATCH",
+        "mode": "strict",
+        "chain": "vus @item nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@item": {
+                        "id": "item_789"
+                    }
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 100
+                },
+                "audit": {},
+                "delivery": "broken",
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_CONTEXT_INCOMPLETE"
+        }
+    }
+]

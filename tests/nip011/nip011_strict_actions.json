@@ -1,0 +1,110 @@
+[
+    {
+        "id": "T-STRICT-ACTION-001",
+        "description": "Undefined action target yields ERR_UNDEFINED_TARGET in strict mode",
+        "mode": "strict",
+        "chain": "mek @undefined_target nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_LITERAL_MISSING"
+        }
+    },
+    {
+        "id": "T-STRICT-ACTION-003",
+        "description": "Valid action execution",
+        "mode": "strict",
+        "chain": "mek @valid_target nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@valid_target": "target_obj"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "action",
+            "value": {
+                "type": "action",
+                "verb": "mek",
+                "target": "target_obj"
+            }
+        }
+    }
+]

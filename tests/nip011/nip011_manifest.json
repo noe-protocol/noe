@@ -1,0 +1,205 @@
+{
+    "nip011_cross_agent.json": {
+        "sha256": "64178f057d9779c28be9b3c353017c192c200ff7ed56cd0ccdc5ff1a13cc67b9",
+        "test_ids": [
+            "T-CA-PARTIAL-OVERLAP",
+            "T-CA-PRIVATE-LITERAL",
+            "T-CA-TEMPORAL-BOUNDARY",
+            "T-CA-UNIVERSAL-TRUTH",
+            "T-DRIFT-STALENESS"
+        ],
+        "count": 5
+    },
+    "nip011_requests.json": {
+        "sha256": "f504c0e30e084625e54bdad6c667ad9231219bcd42ae18cce5cb89d8159106e3",
+        "test_ids": [
+            "REQ_003"
+        ],
+        "count": 1
+    },
+    "nip011_epistemic.json": {
+        "sha256": "a1a4dea097f68036c79b17c265a9050063116385c5b8958d10f50ca9f6fdd335",
+        "test_ids": [
+            "EDET_001",
+            "EDET_002",
+            "EDET_006",
+            "EDET_007",
+            "EDET_008",
+            "EDET_009",
+            "EDET_011",
+            "EDET_012",
+            "EDET_013",
+            "EDET_015",
+            "EDET_10"
+        ],
+        "count": 11
+    },
+    "nip011_demonstratives.json": {
+        "sha256": "4d505c95b7d18f7b1a01d28f9191c768075477bf9f1b2a015f4149b9b32d647c",
+        "test_ids": [
+            "DEM_001",
+            "DEM_002",
+            "DEM_003",
+            "DEM_004",
+            "DEM_005"
+        ],
+        "count": 5
+    },
+    "nip011_literals.json": {
+        "sha256": "4f053dce4d7d8d0259776290ffc7e9f1f3765fe99cd78824a936fd87db07f394",
+        "test_ids": [
+            "LIT_001",
+            "LIT_002",
+            "LIT_003"
+        ],
+        "count": 3
+    },
+    "nip011_strict.json": {
+        "sha256": "9d9e30bcf35ebda76a156884aa7ea74e8919770d987420a288ee4872b943f628",
+        "test_ids": [
+            "T-STRICT-PARTIAL-001"
+        ],
+        "count": 1
+    },
+    "nip011_staleness.json": {
+        "sha256": "dc4f4ffb82072d4c3873cf09ff084415e205bc920592534b826b2f5fd821fd1d",
+        "test_ids": [
+            "STALE_001",
+            "STALE_002",
+            "STALE_004",
+            "TEMPORAL_INCOMPLETE_001"
+        ],
+        "count": 4
+    },
+    "nip011_runtime.json": {
+        "sha256": "ea53329f633fd5d47214be754f220b88f3b0af9440941e6d1952f6843eadf849",
+        "test_ids": [
+            "DEL_001",
+            "DEL_002",
+            "EDET_003",
+            "EDET_004",
+            "EDET_014",
+            "REQ_001",
+            "REQ_002",
+            "SPA_001",
+            "SPA_002",
+            "SPA_003",
+            "SPA_004",
+            "SPA_007",
+            "SPA_008",
+            "T-CA-CONFLICTING-BELIEFS",
+            "T-STRICT-ACTION-002"
+        ],
+        "count": 15
+    },
+    "nip011_spatial.json": {
+        "sha256": "a0357ab5027b9f37cae1de9c4bcb24a2096bca8723c87853908db4a36789e1e7",
+        "test_ids": [
+            "SPA_005",
+            "SPA_006"
+        ],
+        "count": 2
+    },
+    "nip011_delivery.json": {
+        "sha256": "eb9e64868a8d8178386dc1b00a8a73918fa40e8ad50260140fa922f497585456",
+        "test_ids": [
+            "DEL_003"
+        ],
+        "count": 1
+    },
+    "nip011_strict_actions.json": {
+        "sha256": "1e40f6d0cf81b7d47a1a25be43ad25ddd34480e4d807611db31e8cd3c72dadaa",
+        "test_ids": [
+            "T-STRICT-ACTION-001",
+            "T-STRICT-ACTION-003"
+        ],
+        "count": 2
+    },
+    "nip011_ungrounded.json": {
+        "sha256": "ac4dfc468bf5370581a5c36bb5870ca45be3ce4aa80bfb2874741191cb6784e7",
+        "test_ids": [
+            "UNGROUNDED_001",
+            "UNGROUNDED_002",
+            "UNGROUNDED_003",
+            "UNGROUNDED_004"
+        ],
+        "count": 4
+    },
+    "nip011_context.json": {
+        "sha256": "243b07ca4ec6513eb5f35ec80a2f2e21e8e5b7e3f623abe4c035ec055cac53dd",
+        "test_ids": [
+            "CTX_001",
+            "CTX_002",
+            "CTX_003"
+        ],
+        "count": 3
+    },
+    "nip011_audit.json": {
+        "sha256": "87fb90f73df59761b498727f7583164d0a1e67f5c5b047af00f5f75ae14d88f9",
+        "test_ids": [
+            "AUD_001",
+            "AUD_002"
+        ],
+        "count": 2
+    },
+    "nip011_experimental.json": {
+        "sha256": "5d31a3318283e667380f77cbecc6526700129a7e382b2192a44c94186c23bb59",
+        "test_ids": [
+            "EXP_KRA_001"
+        ],
+        "count": 1
+    },
+    "nip011_adversarial.json": {
+        "sha256": "2fc5631d138ab1c6259ba0e186dc6c93ed1d26a74117c0a7d99ced8e953a373a",
+        "test_ids": [
+            "ADV_001",
+            "ADV_002",
+            "ADV_003",
+            "ADV_004",
+            "ADV_005",
+            "ADV_006",
+            "ADV_007",
+            "ADV_008",
+            "ADV_009",
+            "ADV_010"
+        ],
+        "count": 10
+    },
+    "nip011_miscommunication.json": {
+        "sha256": "2fc33051e6d8073c382079f5812a19c5bf744dcd723da7aaa1fedff0c6fff3c3",
+        "test_ids": [
+            "T-MISCOMM-001",
+            "T-MISCOMM-002",
+            "T-MISCOMM-002B",
+            "T-MISCOMM-003",
+            "T-MISCOMM-004",
+            "T-MISCOMM-005"
+        ],
+        "count": 6
+    },
+    "nip011_quantization.json": {
+        "sha256": "ec576d07ef1f819a881e938249957524186cb78015ff85183a785b7bc2dce6cb",
+        "test_ids": [
+            "q_exact_tie_after_scaling",
+            "q_large_value_near_int64_max",
+            "q_near_tie_above",
+            "q_near_tie_below",
+            "q_negative_near_tie",
+            "q_negative_ties",
+            "q_reject_float_input",
+            "q_reject_inf",
+            "q_reject_nan",
+            "q_reject_overflow",
+            "q_scale_precision",
+            "q_ties_to_even_2_5",
+            "q_ties_to_even_down",
+            "q_ties_to_even_up"
+        ],
+        "count": 14
+    },
+    "sources": {
+        "operator_lexicon.py": "e58b16941882686748d1339109cd470080b26015645597d849a6992e36555ace",
+        "tokenize.py": "13cc0e92bb33048a772da9d77baad590d4ce14524ef6ae789e364ed0aaa71d0a",
+        "noe_validator.py": "45543eb67e91399bebb11ce66cc366c40e43d5035581ec3fedeab266e4e2a9f9"
+    }
+}

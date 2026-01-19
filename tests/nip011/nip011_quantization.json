@@ -1,0 +1,103 @@
+[
+    {
+        "name": "q_ties_to_even_down",
+        "desc": "Verify round-half-to-even behavior (0.5 -> 0)",
+        "input_str": "0.5",
+        "scale": 1,
+        "expected_safe": 0
+    },
+    {
+        "name": "q_ties_to_even_up",
+        "desc": "Verify round-half-to-even behavior (1.5 -> 2)",
+        "input_str": "1.5",
+        "scale": 1,
+        "expected_safe": 2
+    },
+    {
+        "name": "q_ties_to_even_2_5",
+        "desc": "Verify round-half-to-even behavior (2.5 -> 2)",
+        "input_str": "2.5",
+        "scale": 1,
+        "expected_safe": 2
+    },
+    {
+        "name": "q_negative_ties",
+        "desc": "Verify negative ties (-1.5 -> -2)",
+        "input_str": "-1.5",
+        "scale": 1,
+        "expected_safe": -2
+    },
+    {
+        "name": "q_scale_precision",
+        "desc": "Verify scaling preserves precision up to integer limit",
+        "input_str": "123.456789",
+        "scale": 1000000,
+        "expected_safe": 123456789
+    },
+    {
+        "name": "q_exact_tie_after_scaling",
+        "desc": "Exact tie after decimal scaling (catches float*scale divergence)",
+        "input_str": "1.2345675",
+        "scale": 1000000,
+        "expected_safe": 1234568,
+        "note": "1.2345675 * 1e6 = 1234567.5 (exact tie) -> 1234568 (even)"
+    },
+    {
+        "name": "q_near_tie_below",
+        "desc": "Near-tie below (would fail with binary float rounding)",
+        "input_str": "1.2345674999999999",
+        "scale": 1000000,
+        "expected_safe": 1234567,
+        "note": "Decimal arithmetic required to distinguish from 1.2345675"
+    },
+    {
+        "name": "q_near_tie_above",
+        "desc": "Near-tie above (would fail with binary float rounding)",
+        "input_str": "1.2345675000000001",
+        "scale": 1000000,
+        "expected_safe": 1234568,
+        "note": "Decimal arithmetic required to distinguish from 1.2345675"
+    },
+    {
+        "name": "q_negative_near_tie",
+        "desc": "Negative near-tie",
+        "input_str": "-1.5000000000000001",
+        "scale": 1,
+        "expected_safe": -2,
+        "note": "Slightly below -1.5, rounds to -2"
+    },
+    {
+        "name": "q_large_value_near_int64_max",
+        "desc": "Large value approaching int64 boundary after scaling",
+        "input_str": "9223372036.854775",
+        "scale": 1000,
+        "expected_safe": 9223372036855,
+        "note": "Near 2^63-1 boundary, tests overflow detection"
+    },
+    {
+        "name": "q_reject_float_input",
+        "desc": "Reject float (not decimal string) - kernel validation",
+        "input_type": "float",
+        "input_value": 123.456,
+        "expected_error": "ERR_INVALID_NUMBER"
+    },
+    {
+        "name": "q_reject_nan",
+        "desc": "Reject NaN",
+        "input_type": "nan",
+        "expected_error": "ERR_INVALID_NUMBER"
+    },
+    {
+        "name": "q_reject_inf",
+        "desc": "Reject Infinity",
+        "input_type": "inf",
+        "expected_error": "ERR_INVALID_NUMBER"
+    },
+    {
+        "name": "q_reject_overflow",
+        "desc": "Reject value exceeding int64 max after scaling",
+        "input_str": "9.3e18",
+        "scale": 1,
+        "expected_error": "ERR_INTEGER_RANGE"
+    }
+]

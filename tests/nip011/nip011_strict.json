@@ -1,0 +1,32 @@
+[
+    {
+        "id": "T-STRICT-PARTIAL-001",
+        "description": "Partial structured context (root only) -> ERR_CONTEXT_INCOMPLETE",
+        "mode": "strict",
+        "chain": "nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 5
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 5
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 100
+                },
+                "timestamp": 1000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_CONTEXT_INCOMPLETE"
+        }
+    }
+]

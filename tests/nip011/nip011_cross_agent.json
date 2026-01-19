@@ -1,0 +1,340 @@
+[
+    {
+        "id": "T-CA-UNIVERSAL-TRUTH",
+        "description": "All agents agree under shared context",
+        "mode": "strict",
+        "chain": "true nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "agents": {
+            "A": {
+                "local": {}
+            },
+            "B": {
+                "local": {}
+            }
+        },
+        "expected": {
+            "agreement": true
+        }
+    },
+    {
+        "id": "T-CA-PRIVATE-LITERAL",
+        "description": "Valid divergence with private literals",
+        "mode": "strict",
+        "chain": "mek @secret nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "agents": {
+            "A": {
+                "local": {
+                    "literals": {
+                        "@secret": "A_val"
+                    }
+                }
+            },
+            "B": {
+                "local": {
+                    "literals": {}
+                }
+            }
+        },
+        "expected": {
+            "domain": "undefined"
+        }
+    },
+    {
+        "id": "T-DRIFT-STALENESS",
+        "description": "Stale context triggers ERR_STALE_CONTEXT",
+        "mode": "strict",
+        "chain": "true nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "agents": {
+            "Fresh": {
+                "local": {
+                    "timestamp": 1000.0
+                }
+            },
+            "Stale": {
+                "local": {
+                    "timestamp": 900.0
+                }
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_CONTEXT_INCOMPLETE"
+        }
+    },
+    {
+        "id": "T-CA-PARTIAL-OVERLAP",
+        "description": "Agents share some but not all knowledge",
+        "mode": "strict",
+        "chain": "shi @shared nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@shared": "shared_val",
+                    "@a_only": "a_val",
+                    "@b_only": "b_val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "agents": {
+            "A": {
+                "root": {
+                    "modal": {
+                        "knowledge": {
+                            "@shared": true,
+                            "@a_only": true
+                        },
+                        "belief": {},
+                        "certainty": {}
+                    }
+                }
+            },
+            "B": {
+                "root": {
+                    "modal": {
+                        "knowledge": {
+                            "@shared": true,
+                            "@b_only": true
+                        },
+                        "belief": {},
+                        "certainty": {}
+                    }
+                }
+            }
+        },
+        "expected": {
+            "agreement": true,
+            "agents": {
+                "A": {
+                    "domain": "truth",
+                    "value": true
+                },
+                "B": {
+                    "domain": "truth",
+                    "value": true
+                }
+            }
+        }
+    },
+    {
+        "id": "T-CA-TEMPORAL-BOUNDARY",
+        "description": "Timestamp exactly at max_skew_ms boundary",
+        "mode": "strict",
+        "chain": "true nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 100
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "agents": {
+            "OnBoundary": {
+                "local": {
+                    "timestamp": 900.0
+                }
+            },
+            "OutOfBounds": {
+                "local": {
+                    "timestamp": 899.9
+                }
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_CONTEXT_INCOMPLETE"
+        }
+    }
+]

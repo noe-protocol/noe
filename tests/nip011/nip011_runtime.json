@@ -1,0 +1,1096 @@
+[
+    {
+        "id": "EDET_004",
+        "description": "vek: Belief membership check (Success - in Belief) - Runtime Semantics",
+        "mode": "strict",
+        "chain": "vek @belief nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@belief": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {
+                        "@belief": true
+                    },
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "REQ_001",
+        "description": "noq: Valid request action",
+        "mode": "strict",
+        "chain": "@agent noq mek @target nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@agent": true,
+                    "@target": {
+                        "type": "action",
+                        "verb": "dummy",
+                        "target": "something"
+                    }
+                },
+                "entities": {
+                    "@agent": {
+                        "kind": "agent"
+                    }
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "local": {
+                    "timestamp": 1678886400000,
+                    "delivery": {
+                        "status": {}
+                    },
+                    "audit": {},
+                    "temporal": {
+                        "now": 1000,
+                        "max_skew_ms": 0
+                    },
+                    "literals": {},
+                    "modal": {
+                        "knowledge": {},
+                        "belief": {},
+                        "certainty": {}
+                    },
+                    "axioms": {
+                        "value_system": {
+                            "accepted": [],
+                            "rejected": []
+                        }
+                    },
+                    "spatial": {
+                        "thresholds": {
+                            "near": 1.0,
+                            "far": 5.0
+                        },
+                        "orientation": {
+                            "target": 0.0,
+                            "tolerance": 5.0
+                        }
+                    }
+                },
+                "timestamp": 1000
+            },
+            "local": {
+                "timestamp": 1678886400000
+            },
+            "domain": {}
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_ACTION_MISUSE"
+        }
+    },
+    {
+        "id": "REQ_002",
+        "description": "noq: Invalid LHS (not entity)",
+        "mode": "strict",
+        "chain": "true noq mek @target nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@target": "target_val"
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "local": {
+                    "timestamp": 1678886400000,
+                    "delivery": {
+                        "status": {}
+                    },
+                    "audit": {},
+                    "temporal": {
+                        "now": 1000,
+                        "max_skew_ms": 0
+                    },
+                    "literals": {},
+                    "modal": {
+                        "knowledge": {},
+                        "belief": {},
+                        "certainty": {}
+                    },
+                    "axioms": {
+                        "value_system": {
+                            "accepted": [],
+                            "rejected": []
+                        }
+                    },
+                    "spatial": {
+                        "thresholds": {
+                            "near": 1.0,
+                            "far": 5.0
+                        },
+                        "orientation": {
+                            "target": 0.0,
+                            "tolerance": 5.0
+                        }
+                    }
+                },
+                "timestamp": 1000
+            },
+            "local": {
+                "timestamp": 1678886400000
+            },
+            "domain": {}
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_ACTION_MISUSE"
+        }
+    },
+    {
+        "id": "SPA_001",
+        "description": "nel (Near) -> True/False",
+        "mode": "strict",
+        "chain": "@box1 nel @box2 nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@box1": true,
+                    "@box2": true
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 2,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "pos": [
+                            0,
+                            0
+                        ]
+                    },
+                    "@box2": {
+                        "pos": [
+                            1,
+                            1
+                        ]
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "SPA_002",
+        "description": "tel (Far) -> True/False",
+        "mode": "strict",
+        "chain": "@box1 tel @box3 nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@box1": true,
+                    "@box3": true
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 2,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "pos": [
+                            0,
+                            0
+                        ]
+                    },
+                    "@box3": {
+                        "pos": [
+                            20,
+                            20
+                        ]
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "EDET_014",
+        "description": "vek: Explicit false belief",
+        "mode": "strict",
+        "chain": "vek @false_belief nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@false_belief": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {
+                        "@false_belief": false
+                    },
+                    "certainty": {
+                        "@false_belief": 0
+                    }
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": false
+        }
+    },
+    {
+        "id": "SPA_003",
+        "description": "xel (Aligned) -> True/False",
+        "mode": "strict",
+        "chain": "@box1 xel @box2 nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@box1": true,
+                    "@box2": true
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 2,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 45,
+                        "tolerance": 5
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "pos": [
+                            0,
+                            0
+                        ]
+                    },
+                    "@box2": {
+                        "pos": [
+                            1,
+                            1
+                        ]
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "SPA_004",
+        "description": "en (In Region) -> True/False",
+        "mode": "strict",
+        "chain": "@box1 en @zone1 nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@box1": true,
+                    "@zone1": true
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 2,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "pos": [
+                            0,
+                            0
+                        ]
+                    },
+                    "@zone1": {
+                        "pos": [
+                            0,
+                            0
+                        ],
+                        "radius": 5
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "SPA_007",
+        "description": "tra (Towards) -> True",
+        "mode": "strict",
+        "chain": "@box1 tra @box2 nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@box1": true,
+                    "@box2": true
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 2,
+                        "far": 10,
+                        "direction": 0
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "pos": [
+                            0,
+                            0
+                        ],
+                        "vel": [
+                            1,
+                            1
+                        ]
+                    },
+                    "@box2": {
+                        "pos": [
+                            10,
+                            10
+                        ]
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "SPA_008",
+        "description": "fra (From/Away) -> True",
+        "mode": "strict",
+        "chain": "@box1 fra @box2 nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@box1": true,
+                    "@box2": true
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 2,
+                        "far": 10,
+                        "direction": 0
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "pos": [
+                            0,
+                            0
+                        ],
+                        "vel": [
+                            -1,
+                            -1
+                        ]
+                    },
+                    "@box2": {
+                        "pos": [
+                            10,
+                            10
+                        ]
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "T-CA-CONFLICTING-BELIEFS",
+        "description": "Agent A believes X true, Agent B believes X false",
+        "mode": "strict",
+        "chain": "vek @disputed nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@disputed": "disputed_val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "agents": {
+            "A": {
+                "root": {
+                    "modal": {
+                        "knowledge": {},
+                        "belief": {
+                            "@disputed": true
+                        },
+                        "certainty": {}
+                    }
+                }
+            },
+            "B": {
+                "root": {
+                    "modal": {
+                        "knowledge": {},
+                        "belief": {
+                            "@disputed": false
+                        },
+                        "certainty": {}
+                    }
+                }
+            }
+        },
+        "expected": {
+            "agreement": false,
+            "agents": {
+                "A": {
+                    "domain": "truth",
+                    "value": true
+                },
+                "B": {
+                    "domain": "truth",
+                    "value": false
+                }
+            }
+        }
+    },
+    {
+        "id": "EDET_003",
+        "description": "shi: Knowledge membership check (Failure - Explicit False)",
+        "mode": "strict",
+        "chain": "shi @false_fact nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@false_fact": "val"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@false_fact": false
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "DEL_001",
+        "description": "vus: Valid delivery status check",
+        "mode": "strict",
+        "chain": "vus @package nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@package": {
+                        "id": "pkg_123",
+                        "destination": "warehouse_A"
+                    }
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 100
+                },
+                "delivery": {
+                    "status": {
+                        "pkg_123": "in_transit"
+                    }
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1000
+            },
+            "literals": {
+                "@pkg": "Stub Package"
+            },
+            "delivery": {
+                "status": {
+                    "pkg_123": "delivered"
+                },
+                "items": {
+                    "pkg_123": {
+                        "status": "delivered",
+                        "verified": true
+                    }
+                }
+            }
+        },
+        "expected": {
+            "domain": "action",
+            "value": {
+                "type": "action",
+                "kind": "delivery",
+                "verb": "vus",
+                "target": "@package",
+                "status": "in_transit",
+                "verified": false
+            }
+        }
+    },
+    {
+        "id": "DEL_002",
+        "description": "vel: Delivery verification operator",
+        "mode": "strict",
+        "chain": "vel @shipment nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@shipment": {
+                        "tracking": "TRK456",
+                        "verified": true
+                    }
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1000,
+                    "max_skew_ms": 100
+                },
+                "delivery": {
+                    "status": {
+                        "TRK456": "delivered"
+                    },
+                    "verified": [
+                        "TRK456"
+                    ]
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1000
+            },
+            "literals": {
+                "@pkg": "Stub Package"
+            },
+            "delivery": {
+                "status": {
+                    "pkg_123": "delivered"
+                },
+                "items": {
+                    "pkg_123": {
+                        "status": "delivered",
+                        "verified": true
+                    }
+                }
+            }
+        },
+        "expected": {
+            "domain": "action",
+            "value": {
+                "type": "action",
+                "kind": "delivery",
+                "verb": "vel",
+                "target": "@shipment",
+                "status": "delivered",
+                "verified": true
+            }
+        }
+    },
+    {
+        "id": "T-STRICT-ACTION-002",
+        "description": "Non-action expression is not treated as an action (sequence parses as list)",
+        "mode": "strict",
+        "chain": "true @target nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@target": "some_target"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "list",
+            "value": [
+                true,
+                "some_target"
+            ]
+        }
+    }
+]

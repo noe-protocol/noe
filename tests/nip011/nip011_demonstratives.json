@@ -1,0 +1,300 @@
+[
+    {
+        "id": "DEM_001",
+        "description": "dia resolves cleanly to 1 entity (Direct Binding)",
+        "mode": "strict",
+        "chain": "shi dia nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {
+                    "dia": {
+                        "entity": "@box1"
+                    }
+                },
+                "entities": {
+                    "@box1": {
+                        "distance": 0
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "DEM_002",
+        "description": "dia resolves cleanly via Spatial Thresholds (Unique)",
+        "mode": "strict",
+        "chain": "shi dia nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "distance": 0
+                    },
+                    "@box2": {
+                        "distance": 5
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "DEM_003",
+        "description": "dia Ambiguous (Multiple entities in range) -> undefined",
+        "mode": "strict",
+        "chain": "shi dia nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "distance": 0
+                    },
+                    "@box2": {
+                        "distance": 0
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "undefined",
+            "value": "undefined"
+        }
+    },
+    {
+        "id": "DEM_004",
+        "description": "dia No Match (No entities in range) -> undefined",
+        "mode": "strict",
+        "chain": "shi dia nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "distance": 5
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "undefined",
+            "value": "undefined"
+        }
+    },
+    {
+        "id": "DEM_005",
+        "description": "dia Missing Thresholds -> undefined",
+        "mode": "strict",
+        "chain": "shi dia nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "spatial": {
+                    "thresholds": {},
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "distance": 0
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_DEMONSTRATIVE_UNGROUNDED",
+            "value": "blocked"
+        }
+    }
+]

@@ -1,0 +1,39 @@
+[
+    {
+        "id": "CTX_001",
+        "description": "Malformed context: context is null \u2192 ERR_BAD_CONTEXT",
+        "mode": "strict",
+        "chain": "true nek",
+        "context": [
+            "this",
+            "is",
+            "invalid"
+        ],
+        "expected": {
+            "domain": "error",
+            "code": "ERR_BAD_CONTEXT"
+        }
+    },
+    {
+        "id": "CTX_002",
+        "description": "Malformed context: context is array \u2192 ERR_BAD_CONTEXT",
+        "mode": "strict",
+        "chain": "true nek",
+        "context": [],
+        "expected": {
+            "domain": "error",
+            "code": "ERR_BAD_CONTEXT"
+        }
+    },
+    {
+        "id": "CTX_003",
+        "description": "Malformed context: context is string \u2192 ERR_BAD_CONTEXT",
+        "mode": "strict",
+        "chain": "true nek",
+        "context": "not an object",
+        "expected": {
+            "domain": "error",
+            "code": "ERR_BAD_CONTEXT"
+        }
+    }
+]

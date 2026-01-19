@@ -1,0 +1,494 @@
+[
+    {
+        "id": "ADV_001",
+        "description": "Deep Nesting: Many parentheses",
+        "mode": "strict",
+        "chain": "((((((((((true)))))))))) nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "ADV_002",
+        "description": "Whitespace: Chain with excessive whitespace",
+        "mode": "strict",
+        "chain": "   true      ur      false   nek   ",
+        "context": {
+            "root": {
+                "literals": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "ADV_003",
+        "description": "Special Characters: Unicode in literal key",
+        "mode": "strict",
+        "chain": "@\ud83d\ude80 | nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@\ud83d\ude80": true
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_INVALID_LITERAL"
+        }
+    },
+    {
+        "id": "ADV_004",
+        "description": "Type Mismatch: Number where boolean expected (logical OR)",
+        "mode": "strict",
+        "chain": "123 ur true nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "ADV_005",
+        "description": "Type Mismatch: Object where boolean expected (logical AND)",
+        "mode": "strict",
+        "chain": "@obj an true nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@obj": {
+                        "some": "obj"
+                    }
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "undefined",
+            "value": "undefined"
+        }
+    },
+    {
+        "id": "ADV_006",
+        "description": "Overflow: Extremely large number",
+        "mode": "strict",
+        "chain": "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999 nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "numeric",
+            "value": 1e+100
+        }
+    },
+    {
+        "id": "ADV_007",
+        "description": "Injection Attempt: Operator-like string in literal",
+        "mode": "strict",
+        "chain": "@injection nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@injection": " | true | "
+                },
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            },
+            "literals": {
+                "@true_val": true
+            }
+        },
+        "expected": {
+            "domain": "literal",
+            "key": "injection",
+            "value": " | true | "
+        }
+    },
+    {
+        "id": "ADV_008",
+        "description": "Empty Chain (just termination)",
+        "mode": "strict",
+        "chain": "nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_PARSE_FAILED"
+        }
+    },
+    {
+        "id": "ADV_009",
+        "description": "Malformed: Missing termination",
+        "mode": "strict",
+        "chain": "true",
+        "context": {
+            "root": {
+                "literals": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "ADV_010",
+        "description": "Malformed: Double termination",
+        "mode": "strict",
+        "chain": "true nek nek",
+        "context": {
+            "root": {
+                "literals": {},
+                "modal": {
+                    "knowledge": {},
+                    "belief": {},
+                    "certainty": {}
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 1.0,
+                        "far": 10.0
+                    },
+                    "orientation": {
+                        "target": 0.0,
+                        "tolerance": 0.1
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_PARSE_FAILED"
+        }
+    }
+]

@@ -1,0 +1,136 @@
+[
+    {
+        "id": "SPA_005",
+        "description": "Missing Entity/Pos -> undefined",
+        "mode": "strict",
+        "chain": "@box1 nel @missing nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@box1": true,
+                    "@missing": true
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {
+                        "near": 2,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "pos": [
+                            0,
+                            0
+                        ]
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "undefined",
+            "value": "undefined"
+        }
+    },
+    {
+        "id": "SPA_006",
+        "description": "Missing Thresholds -> undefined",
+        "mode": "strict",
+        "chain": "@box1 nel @box2 nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@box1": true,
+                    "@box2": true
+                },
+                "spatial": {
+                    "unit": "generic",
+                    "thresholds": {},
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "entities": {
+                    "@box1": {
+                        "pos": [
+                            0,
+                            0
+                        ]
+                    },
+                    "@box2": {
+                        "pos": [
+                            1,
+                            1
+                        ]
+                    }
+                },
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@box1": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "undefined",
+            "value": "undefined",
+            "_note": "Current semantics: missing thresholds returns undefined (safe non-execution)"
+        }
+    }
+]

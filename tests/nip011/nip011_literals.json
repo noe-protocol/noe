@@ -1,0 +1,167 @@
+[
+    {
+        "id": "LIT_001",
+        "description": "Literal present -> chain evaluates normally",
+        "mode": "strict",
+        "chain": "shi @fact nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "fact": "some_fact"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "fact": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "truth",
+            "value": true
+        }
+    },
+    {
+        "id": "LIT_002",
+        "description": "Literal missing -> undefined",
+        "mode": "strict",
+        "chain": "@missing nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@fact": "some_fact"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@dummy": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_LITERAL_MISSING"
+        }
+    },
+    {
+        "id": "LIT_003",
+        "description": "Literal malformed -> ERR_PARSE_FAILED",
+        "mode": "strict",
+        "chain": "shi @bad-char nek",
+        "context": {
+            "root": {
+                "literals": {
+                    "@fact": "some_fact"
+                },
+                "spatial": {
+                    "thresholds": {
+                        "near": 1,
+                        "far": 10
+                    },
+                    "orientation": {
+                        "target": 0,
+                        "tolerance": 0
+                    }
+                },
+                "temporal": {
+                    "now": 1678886400000,
+                    "max_skew_ms": 5000
+                },
+                "axioms": {
+                    "value_system": {
+                        "accepted": [],
+                        "rejected": []
+                    }
+                },
+                "rel": {},
+                "demonstratives": {},
+                "delivery": {
+                    "status": {}
+                },
+                "audit": {},
+                "modal": {
+                    "knowledge": {
+                        "@dummy": true
+                    },
+                    "belief": {},
+                    "certainty": {}
+                },
+                "timestamp": 1000
+            },
+            "domain": {},
+            "local": {
+                "timestamp": 1678886400000
+            }
+        },
+        "expected": {
+            "domain": "error",
+            "code": "ERR_INVALID_LITERAL"
+        }
+    }
+]
