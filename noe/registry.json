@@ -1,0 +1,1290 @@
+{
+    "meta": {
+        "protocol": "Noe",
+        "version": "1.0.0",
+        "status": "Canonical",
+        "last_updated": "2025-11-21",
+        "maintainer": "Noe Foundation",
+        "notes": "Frozen V1.0 Registry. Domains normalized. Visuals ASCII-safe."
+    },
+    "glyphs": [
+        {
+            "id": "g_nul",
+            "phonetic": "nul",
+            "tier": 0,
+            "domain": "D_struct",
+            "type_sig": "Const",
+            "semantic": "Null / Empty",
+            "visual_placeholder": "∅",
+            "explainable": false,
+            "deprecated": false,
+            "conflicts_with": [
+                "g_zo"
+            ]
+        },
+        {
+            "id": "g_el",
+            "phonetic": "el",
+            "tier": 0,
+            "domain": "D_struct",
+            "type_sig": "Pred",
+            "semantic": "Identity",
+            "visual_placeholder": "⦾",
+            "deprecated": false,
+            "conflicts_with": [
+                "g_ek"
+            ]
+        },
+        {
+            "id": "g_lit",
+            "phonetic": "at",
+            "tier": 0,
+            "domain": "D_struct",
+            "type_sig": "Op",
+            "semantic": "Literal Marker",
+            "visual_placeholder": "@",
+            "explainable": true,
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_nek",
+            "phonetic": "nek",
+            "tier": 0,
+            "domain": "D_struct",
+            "type_sig": "Terminator",
+            "semantic": "Termination",
+            "visual_placeholder": "—",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_sek",
+            "phonetic": "sek",
+            "tier": 0,
+            "domain": "D_struct",
+            "type_sig": "Scope",
+            "semantic": "Scope Boundary",
+            "visual_placeholder": "§",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_da",
+            "phonetic": "da",
+            "tier": 0,
+            "domain": "D_struct",
+            "type_sig": "Constructor",
+            "semantic": "Clause Intro",
+            "visual_placeholder": "ɨ",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_qua",
+            "phonetic": "qua",
+            "tier": 0,
+            "domain": "D_struct",
+            "type_sig": "Op",
+            "semantic": "Question",
+            "visual_placeholder": "𐍱",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_dai",
+            "phonetic": "dai",
+            "tier": 0,
+            "domain": "D_e",
+            "type_sig": "Entity",
+            "semantic": "Self",
+            "visual_placeholder": "𐌙",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_syl",
+            "phonetic": "syl",
+            "tier": 1,
+            "domain": "D_e",
+            "type_sig": "Entity",
+            "semantic": "You",
+            "visual_placeholder": "𐌸",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_sol",
+            "phonetic": "sol",
+            "tier": 1,
+            "domain": "D_e",
+            "type_sig": "Entity",
+            "semantic": "We",
+            "visual_placeholder": "𐌡",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_sar",
+            "phonetic": "sar",
+            "tier": 1,
+            "domain": "D_e",
+            "type_sig": "Entity",
+            "semantic": "They",
+            "visual_placeholder": "𐍉",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_kai",
+            "phonetic": "kai",
+            "tier": 1,
+            "domain": "D_e",
+            "type_sig": "Entity",
+            "semantic": "Agent",
+            "visual_placeholder": "𐌑",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_lok",
+            "phonetic": "lok",
+            "tier": 1,
+            "domain": "D_e",
+            "type_sig": "Entity",
+            "semantic": "Object",
+            "visual_placeholder": "○",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_hum",
+            "phonetic": "hum",
+            "tier": 1,
+            "domain": "D_e",
+            "type_sig": "Entity",
+            "semantic": "Human",
+            "visual_placeholder": "ƛ",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_alu",
+            "phonetic": "alu",
+            "tier": 1,
+            "domain": "D_e",
+            "type_sig": "Entity",
+            "semantic": "All/Univ",
+            "visual_placeholder": "𐌋",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_os",
+            "phonetic": "os",
+            "tier": 1,
+            "domain": "D_e",
+            "type_sig": "Entity",
+            "semantic": "Source",
+            "visual_placeholder": "𐍈",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_nai",
+            "phonetic": "nai",
+            "tier": 0,
+            "domain": "D_logic",
+            "type_sig": "Op",
+            "semantic": "Not",
+            "visual_placeholder": "𐌈",
+            "deprecated": false,
+            "conflicts_with": [
+                "g_nei"
+            ]
+        },
+        {
+            "id": "g_an",
+            "phonetic": "an",
+            "tier": 0,
+            "domain": "D_logic",
+            "type_sig": "Op",
+            "semantic": "And",
+            "visual_placeholder": "⟑",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ur",
+            "phonetic": "ur",
+            "tier": 0,
+            "domain": "D_logic",
+            "type_sig": "Op",
+            "semantic": "Or",
+            "visual_placeholder": "⟇",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_khi",
+            "phonetic": "khi",
+            "tier": 0,
+            "domain": "D_logic",
+            "type_sig": "Op",
+            "semantic": "If/Then",
+            "visual_placeholder": "⟠",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_nex",
+            "phonetic": "nex",
+            "tier": 0,
+            "domain": "D_logic",
+            "type_sig": "Op",
+            "semantic": "Exclude",
+            "visual_placeholder": "⦸",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_til",
+            "phonetic": "til",
+            "tier": 1,
+            "domain": "D_logic",
+            "type_sig": "Op",
+            "semantic": "Until",
+            "visual_placeholder": "<|",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_kos",
+            "phonetic": "kos",
+            "tier": 1,
+            "domain": "D_logic",
+            "type_sig": "Op",
+            "semantic": "Cause",
+            "visual_placeholder": "=>",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_kan",
+            "phonetic": "kan",
+            "tier": 1,
+            "domain": "D_logic",
+            "type_sig": "Op",
+            "semantic": "Possible",
+            "visual_placeholder": "<>",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_sor",
+            "phonetic": "sor",
+            "tier": 1,
+            "domain": "D_logic",
+            "type_sig": "Op",
+            "semantic": "Therefore",
+            "visual_placeholder": ":.",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ko",
+            "phonetic": "ko",
+            "tier": 0,
+            "domain": "D_morph",
+            "type_sig": "Op",
+            "semantic": "Binder",
+            "visual_placeholder": "-",
+            "deprecated": false,
+            "conflicts_with": [
+                "g_tok"
+            ]
+        },
+        {
+            "id": "g_mek",
+            "phonetic": "mek",
+            "tier": 0,
+            "domain": "D_morph",
+            "type_sig": "Op",
+            "semantic": "Verbalizer",
+            "visual_placeholder": "u",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_tok",
+            "phonetic": "tok",
+            "tier": 0,
+            "domain": "D_morph",
+            "type_sig": "Op",
+            "semantic": "Nominalizer",
+            "visual_placeholder": "n",
+            "deprecated": false,
+            "conflicts_with": [
+                "g_ko"
+            ]
+        },
+        {
+            "id": "g_al",
+            "phonetic": "al",
+            "tier": 0,
+            "domain": "D_morph",
+            "type_sig": "Op",
+            "semantic": "Abstractor",
+            "visual_placeholder": "N",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_nei",
+            "phonetic": "nei",
+            "tier": 0,
+            "domain": "D_morph",
+            "type_sig": "Op",
+            "semantic": "Inversion",
+            "visual_placeholder": "*",
+            "deprecated": false,
+            "conflicts_with": [
+                "g_nai"
+            ]
+        },
+        {
+            "id": "g_es",
+            "phonetic": "es",
+            "tier": 0,
+            "domain": "D_state",
+            "type_sig": "Copula",
+            "semantic": "Is",
+            "visual_placeholder": "𐌹",
+            "deprecated": false,
+            "conflicts_with": [
+                "g_ek"
+            ]
+        },
+        {
+            "id": "g_shi",
+            "phonetic": "shi",
+            "tier": 1,
+            "domain": "D_epistemic",
+            "type_sig": "Op",
+            "semantic": "Know",
+            "visual_placeholder": "ʖ",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_vek",
+            "phonetic": "vek",
+            "tier": 1,
+            "domain": "D_epistemic",
+            "type_sig": "Op",
+            "semantic": "Believe",
+            "visual_placeholder": "ϕ",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_sha",
+            "phonetic": "sha",
+            "tier": 1,
+            "domain": "D_epistemic",
+            "type_sig": "Op",
+            "semantic": "Certainty",
+            "visual_placeholder": "φ",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_tor",
+            "phonetic": "tor",
+            "tier": 1,
+            "domain": "D_normative",
+            "type_sig": "Op",
+            "semantic": "Rightness",
+            "visual_placeholder": "⊕",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_nau",
+            "phonetic": "nau",
+            "tier": 0,
+            "domain": "D_temporal",
+            "type_sig": "Op",
+            "semantic": "Now",
+            "visual_placeholder": "𐌛",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ret",
+            "phonetic": "ret",
+            "tier": 0,
+            "domain": "D_temporal",
+            "type_sig": "Op",
+            "semantic": "Past",
+            "visual_placeholder": "ƿ",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_tri",
+            "phonetic": "tri",
+            "tier": 0,
+            "domain": "D_temporal",
+            "type_sig": "Op",
+            "semantic": "Future",
+            "visual_placeholder": "𐍄",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_qer",
+            "phonetic": "qer",
+            "tier": 0,
+            "domain": "D_temporal",
+            "type_sig": "loop_op",
+            "semantic": "Iteration",
+            "visual_placeholder": "𐍳",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_nel",
+            "phonetic": "nel",
+            "tier": 0,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Near",
+            "visual_placeholder": "𐍙",
+            "antonym_of": "g_tel",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_tel",
+            "phonetic": "tel",
+            "tier": 0,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Far",
+            "visual_placeholder": "𐍠",
+            "antonym_of": "g_nel",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_xel",
+            "phonetic": "xel",
+            "tier": 0,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Contact",
+            "visual_placeholder": "𐍡",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_en",
+            "phonetic": "en",
+            "tier": 0,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "In",
+            "visual_placeholder": "ɯ",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_tra",
+            "phonetic": "tra",
+            "tier": 0,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Toward",
+            "visual_placeholder": "↠",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_fra",
+            "phonetic": "fra",
+            "tier": 0,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "From",
+            "visual_placeholder": "↞",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_mir",
+            "phonetic": "mir",
+            "tier": 1,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Similar",
+            "visual_placeholder": "𐍯",
+            "antonym_of": "g_vak",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_vak",
+            "phonetic": "vak",
+            "tier": 1,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Distinct",
+            "visual_placeholder": "𐍰",
+            "antonym_of": "g_mir",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_vus",
+            "phonetic": "vus",
+            "tier": 0,
+            "domain": "D_action",
+            "type_sig": "Action",
+            "semantic": "Send",
+            "visual_placeholder": "𐌯",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_vel",
+            "phonetic": "vel",
+            "tier": 0,
+            "domain": "D_action",
+            "type_sig": "Action",
+            "semantic": "Receive",
+            "visual_placeholder": "𐍩",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_men",
+            "phonetic": "men",
+            "tier": 1,
+            "domain": "D_action",
+            "type_sig": "Action",
+            "semantic": "Audit",
+            "visual_placeholder": "𐍴",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_noq",
+            "phonetic": "noq",
+            "tier": 1,
+            "domain": "D_action",
+            "type_sig": "Action",
+            "semantic": "Request",
+            "visual_placeholder": "𐍁",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_kra",
+            "phonetic": "kra",
+            "tier": 0,
+            "domain": "D_action",
+            "type_sig": "Action",
+            "semantic": "Assert",
+            "visual_placeholder": "𐌲",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_har",
+            "phonetic": "har",
+            "tier": 1,
+            "domain": "D_action",
+            "type_sig": "Action",
+            "semantic": "Want",
+            "visual_placeholder": "𐌔",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_mel",
+            "phonetic": "mel",
+            "tier": 1,
+            "domain": "D_action",
+            "type_sig": "Action",
+            "semantic": "Help",
+            "visual_placeholder": "𐍔",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_soi",
+            "phonetic": "soi",
+            "tier": 1,
+            "domain": "D_question",
+            "type_sig": "Root",
+            "semantic": "What",
+            "visual_placeholder": "𐌂",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_kru",
+            "phonetic": "kru",
+            "tier": 1,
+            "domain": "D_question",
+            "type_sig": "Root",
+            "semantic": "Who",
+            "visual_placeholder": "?A",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_fek",
+            "phonetic": "fek",
+            "tier": 1,
+            "domain": "D_question",
+            "type_sig": "Root",
+            "semantic": "Why",
+            "visual_placeholder": "?C",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_eni",
+            "phonetic": "eni",
+            "tier": 1,
+            "domain": "D_quantifier",
+            "type_sig": "Op",
+            "semantic": "All",
+            "visual_placeholder": "∿",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_sem",
+            "phonetic": "sem",
+            "tier": 1,
+            "domain": "D_quantifier",
+            "type_sig": "Op",
+            "semantic": "Some",
+            "visual_placeholder": "𐍃",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_mun",
+            "phonetic": "mun",
+            "tier": 1,
+            "domain": "D_quantifier",
+            "type_sig": "Op",
+            "semantic": "Many",
+            "visual_placeholder": "…",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_fiu",
+            "phonetic": "fiu",
+            "tier": 1,
+            "domain": "D_quantifier",
+            "type_sig": "Op",
+            "semantic": "Few",
+            "visual_placeholder": "⁖",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_sum",
+            "phonetic": "sum",
+            "tier": 1,
+            "domain": "D_quantifier",
+            "type_sig": "Op",
+            "semantic": "Sum",
+            "visual_placeholder": "∑",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_vis",
+            "phonetic": "vis",
+            "tier": 1,
+            "domain": "D_sense",
+            "type_sig": "Input",
+            "semantic": "Vision",
+            "visual_placeholder": "𐍮",
+            "explainable": true,
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_hau",
+            "phonetic": "hau",
+            "tier": 1,
+            "domain": "D_sense",
+            "type_sig": "Input",
+            "semantic": "Hearing",
+            "visual_placeholder": "𐍫",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_per",
+            "phonetic": "per",
+            "tier": 1,
+            "domain": "D_sense",
+            "type_sig": "Input",
+            "semantic": "Perceive",
+            "visual_placeholder": "𐍵",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_fel",
+            "phonetic": "fel",
+            "tier": 1,
+            "domain": "D_valence",
+            "type_sig": "State",
+            "semantic": "Joy",
+            "visual_placeholder": "𐌵",
+            "antonym_of": "g_dar",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_dar",
+            "phonetic": "dar",
+            "tier": 1,
+            "domain": "D_valence",
+            "type_sig": "State",
+            "semantic": "Pain",
+            "visual_placeholder": "𐌶",
+            "antonym_of": "g_fel",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_nem",
+            "phonetic": "nem",
+            "tier": 1,
+            "domain": "D_valence",
+            "type_sig": "State",
+            "semantic": "Peace",
+            "visual_placeholder": "⌑",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_zar",
+            "phonetic": "zar",
+            "tier": 1,
+            "domain": "D_valence",
+            "type_sig": "State",
+            "semantic": "Danger",
+            "visual_placeholder": "𐍇",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_vai",
+            "phonetic": "vai",
+            "tier": 1,
+            "domain": "D_valence",
+            "type_sig": "State",
+            "semantic": "Affect",
+            "visual_placeholder": "𐌚",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_int_low",
+            "phonetic": "-a",
+            "tier": 1,
+            "domain": "D_scalar",
+            "type_sig": "Mod",
+            "semantic": "Low",
+            "visual_placeholder": "´",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_int_med",
+            "phonetic": "-u",
+            "tier": 1,
+            "domain": "D_scalar",
+            "type_sig": "Mod",
+            "semantic": "Med",
+            "visual_placeholder": "˝",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_int_high",
+            "phonetic": "-o",
+            "tier": 1,
+            "domain": "D_scalar",
+            "type_sig": "Mod",
+            "semantic": "High",
+            "visual_placeholder": "°",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_dia",
+            "phonetic": "dia",
+            "tier": 1,
+            "domain": "D_demonstrative",
+            "type_sig": "Ref",
+            "semantic": "This",
+            "visual_placeholder": "𐌾",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_doq",
+            "phonetic": "doq",
+            "tier": 1,
+            "domain": "D_demonstrative",
+            "type_sig": "Ref",
+            "semantic": "That",
+            "visual_placeholder": "𐍕",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_zo",
+            "phonetic": "zo",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "0",
+            "visual_placeholder": "0",
+            "explainable": false,
+            "deprecated": false,
+            "conflicts_with": [
+                "g_nul"
+            ]
+        },
+        {
+            "id": "g_un",
+            "phonetic": "un",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "1",
+            "visual_placeholder": "1",
+            "explainable": false,
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_du",
+            "phonetic": "du",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "2",
+            "visual_placeholder": "2",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_tua",
+            "phonetic": "tua",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "3",
+            "visual_placeholder": "3",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_fo",
+            "phonetic": "fo",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "4",
+            "visual_placeholder": "4",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_pen",
+            "phonetic": "pen",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "5",
+            "visual_placeholder": "5",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_hek",
+            "phonetic": "hek",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "6",
+            "visual_placeholder": "6",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_sep",
+            "phonetic": "sep",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "7",
+            "visual_placeholder": "7",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ok",
+            "phonetic": "ok",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "8",
+            "visual_placeholder": "8",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_nan",
+            "phonetic": "nan",
+            "tier": 1,
+            "domain": "D_numeric",
+            "type_sig": "Num",
+            "semantic": "9",
+            "visual_placeholder": "9",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ap",
+            "phonetic": "ap",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Op",
+            "semantic": "Add",
+            "visual_placeholder": "+",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_su",
+            "phonetic": "su",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Op",
+            "semantic": "Sub",
+            "visual_placeholder": "−",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ka",
+            "phonetic": "ka",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Op",
+            "semantic": "Mul",
+            "visual_placeholder": "×",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_vo",
+            "phonetic": "vo",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Op",
+            "semantic": "Div",
+            "visual_placeholder": "÷",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ek",
+            "phonetic": "ek",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Comp",
+            "semantic": "Eq",
+            "visual_placeholder": "=",
+            "deprecated": false,
+            "conflicts_with": [
+                "g_es"
+            ]
+        },
+        {
+            "id": "g_ak",
+            "phonetic": "ak",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Comp",
+            "semantic": "Approx",
+            "visual_placeholder": "≈",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ran",
+            "phonetic": "ran",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Op",
+            "semantic": "Range",
+            "visual_placeholder": "..",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_lek",
+            "phonetic": "lek",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Comp",
+            "semantic": "Leq",
+            "visual_placeholder": "≤",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_geq",
+            "phonetic": "geq",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Comp",
+            "semantic": "Geq",
+            "visual_placeholder": "≥",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_lef",
+            "phonetic": "lef",
+            "tier": 1,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Left Of",
+            "visual_placeholder": "←",
+            "description": "left-of: X is left of Y along the horizontal axis (−x). Pure axis comparison.",
+            "type_signature": {
+                "args": [
+                    "entity",
+                    "entity"
+                ],
+                "returns": "truth"
+            },
+            "context_requirements": [
+                "C_local.position.*",
+                "C_root.spatial.frames"
+            ],
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_rai",
+            "phonetic": "rai",
+            "tier": 1,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Right Of",
+            "visual_placeholder": "→",
+            "description": "right-of: X is right of Y along the horizontal axis (+x). Pure axis comparison.",
+            "type_signature": {
+                "args": [
+                    "entity",
+                    "entity"
+                ],
+                "returns": "truth"
+            },
+            "context_requirements": [
+                "C_local.position.*",
+                "C_root.spatial.frames"
+            ],
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_sup",
+            "phonetic": "sup",
+            "tier": 1,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Above (Rel)",
+            "visual_placeholder": "↑",
+            "description": "vertically-positive-relative: X is higher than Y along the vertical axis (+z). Not 'above' in natural language.",
+            "type_signature": {
+                "args": [
+                    "entity",
+                    "entity"
+                ],
+                "returns": "truth"
+            },
+            "context_requirements": [
+                "C_local.position.*",
+                "C_root.spatial.frames"
+            ],
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_bel",
+            "phonetic": "bel",
+            "tier": 1,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Below (Rel)",
+            "visual_placeholder": "↓",
+            "description": "vertically-negative-relative: X is lower than Y along the vertical axis (−z). Not 'below' in natural language.",
+            "type_signature": {
+                "args": [
+                    "entity",
+                    "entity"
+                ],
+                "returns": "truth"
+            },
+            "context_requirements": [
+                "C_local.position.*",
+                "C_root.spatial.frames"
+            ],
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_fai",
+            "phonetic": "fai",
+            "tier": 1,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "In Front Of",
+            "visual_placeholder": "⇑",
+            "description": "in-front-of: X is forward of Y along the depth axis (+y). Aligned to robot/camera forward.",
+            "type_signature": {
+                "args": [
+                    "entity",
+                    "entity"
+                ],
+                "returns": "truth"
+            },
+            "context_requirements": [
+                "C_local.position.*",
+                "C_root.spatial.frames"
+            ],
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ban",
+            "phonetic": "ban",
+            "tier": 1,
+            "domain": "D_spatial",
+            "type_sig": "Rel",
+            "semantic": "Behind",
+            "visual_placeholder": "⇓",
+            "description": "behind: X is behind Y along the depth axis (−y). Deterministic depth comparison.",
+            "type_signature": {
+                "args": [
+                    "entity",
+                    "entity"
+                ],
+                "returns": "truth"
+            },
+            "context_requirements": [
+                "C_local.position.*",
+                "C_root.spatial.frames"
+            ],
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_fusion",
+            "phonetic": "fus",
+            "tier": 1,
+            "domain": "D_morphology",
+            "type_sig": "Op",
+            "semantic": "Fusion",
+            "visual_placeholder": "·",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ko",
+            "phonetic": "ko",
+            "tier": 1,
+            "domain": "D_morphology",
+            "type_sig": "Op",
+            "semantic": "Co-occurrence",
+            "visual_placeholder": "⚭",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_mek",
+            "phonetic": "mek",
+            "tier": 1,
+            "domain": "D_morphology",
+            "type_sig": "Op",
+            "semantic": "Make",
+            "visual_placeholder": "𐍀",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_tok",
+            "phonetic": "tok",
+            "tier": 1,
+            "domain": "D_morphology",
+            "type_sig": "Op",
+            "semantic": "Token",
+            "visual_placeholder": "𐍓",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_al",
+            "phonetic": "al",
+            "tier": 1,
+            "domain": "D_morphology",
+            "type_sig": "Op",
+            "semantic": "Abstract",
+            "visual_placeholder": "𐍦",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_nei",
+            "phonetic": "nei",
+            "tier": 1,
+            "domain": "D_morphology",
+            "type_sig": "Suffix",
+            "semantic": "Not (Suffix)",
+            "visual_placeholder": "𐌟",
+            "deprecated": false,
+            "conflicts_with": []
+        },
+        {
+            "id": "g_ek_nei",
+            "phonetic": "ek·nei",
+            "tier": 1,
+            "domain": "D_numeric_op",
+            "type_sig": "Comp",
+            "semantic": "Neq",
+            "visual_placeholder": "≠",
+            "deprecated": false,
+            "conflicts_with": []
+        }
+    ]
+}
