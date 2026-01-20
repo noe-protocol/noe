@@ -2977,10 +2977,6 @@ def run_noe_logic(chain_text, context_object, mode="strict", audience=None, to=N
         # In strict mode, deep structural validation (recursion depth, etc.) 
         # was already performed by validate_chain() above. 
         # We proceed directly to evaluation.
-
-        # DEBUG: Print parse tree
-        # with open("debug_tree.log", "a") as f:
-        #     f.write(f"DEBUG: Parse Tree: {parse_tree}\n")
         
         # Pass merged context to evaluator so it can access entities/spatial directly
         # merged_eval_ctx = merge_layers_for_validation(eval_ctx) # Redundant: eval_ctx is already merged
