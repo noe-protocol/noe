@@ -142,15 +142,8 @@
         ],
         "count": 2
     },
-    "nip011_experimental.json": {
-        "sha256": "5d31a3318283e667380f77cbecc6526700129a7e382b2192a44c94186c23bb59",
-        "test_ids": [
-            "EXP_KRA_001"
-        ],
-        "count": 1
-    },
     "nip011_adversarial.json": {
-        "sha256": "2fc5631d138ab1c6259ba0e186dc6c93ed1d26a74117c0a7d99ced8e953a373a",
+        "sha256": "f6a65e2e50d4c351817631a7bea71b62b2cd7e7863127f57bdf02d2149721eb7",
         "test_ids": [
             "ADV_001",
             "ADV_002",

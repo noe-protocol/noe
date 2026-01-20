@@ -21,12 +21,14 @@ import unittest
 import math
 import threading
 import multiprocessing
+import multiprocessing
 import subprocess
+import hashlib
 
 # Add root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from noe.noe_validator import compute_context_hash, compute_stale_flag
+from noe.noe_validator import compute_context_hashes, compute_stale_flag
 from noe.context_projection import is_candidate, AnnotatedLiteral, ProjectionConfig
 from noe.noe_parser import run_noe_logic
 
@@ -61,21 +63,30 @@ class RedTeamAudit(unittest.TestCase):
         
         ctx = {"a": 1, "b": 2}
         
-        # Calculate hash using our canonicalizer
-        h1 = compute_context_hash(ctx)
+        # Calculate hash using our canonicalizer (v1.0 uses structural hashing)
+        h1 = compute_context_hashes(ctx)["total"]
         
-        # Verify it matches explicit strict separation
-        payload = json.dumps(ctx, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
-        import hashlib
-        expected = hashlib.sha256(payload).hexdigest()
+        # Verify it matches explicit strict separation + structural composition
+        # 1. Local Payload (Canonical)
+        local_payload = json.dumps(ctx, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        h_local = hashlib.sha256(local_payload).digest()
+        
+        # 2. Empty Root/Domain (Canonical defaults)
+        empty_payload = json.dumps({}, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+        h_root = hashlib.sha256(empty_payload).digest()
+        h_domain = hashlib.sha256(empty_payload).digest()
+        
+        # 3. Structural Hash (sha256(root + domain + local))
+        expected = hashlib.sha256(h_root + h_domain + h_local).hexdigest()
         
         self.assertEqual(h1, expected)
         
-        # Compare against default json.dumps (which adds spaces)
+        # Compare against default json.dumps (which adds spaces) -> Structural hash would differ in local part
         bad_payload = json.dumps(ctx, sort_keys=True).encode("utf-8")
-        bad_hash = hashlib.sha256(bad_payload).hexdigest()
+        h_local_bad = hashlib.sha256(bad_payload).digest()
+        bad_structural = hashlib.sha256(h_root + h_domain + h_local_bad).hexdigest()
         
-        self.assertNotEqual(h1, bad_hash)
+        self.assertNotEqual(h1, bad_structural)
         print(" -> PASSED (Hash matches strict separators, rejects default whitespace)")
 
     def test_singleton_leak(self):
@@ -92,15 +103,15 @@ class RedTeamAudit(unittest.TestCase):
         ctx1 = {"id": 1, "val": "A"}
         ctx2 = {"id": 1, "val": "B"} # Same "id" key, different val
         
-        h1 = compute_context_hash(ctx1)
-        h2 = compute_context_hash(ctx2)
+        h1 = compute_context_hashes(ctx1)["total"]
+        h2 = compute_context_hashes(ctx2)["total"]
         
         self.assertNotEqual(h1, h2, "Different contexts must have different hashes despite caching")
         
         # Verify cache isolation/correctness
         # (If cache used object ID and we somehow reused ID, Python handles it, 
         # but we check correctness here)
-        h1_again = compute_context_hash(ctx1)
+        h1_again = compute_context_hashes(ctx1)["total"]
         self.assertEqual(h1, h1_again)
         
         print(" -> PASSED (Independent contexts produce independent hashes)")
@@ -118,7 +129,7 @@ class RedTeamAudit(unittest.TestCase):
         # Case 1: Future Timestamp (Year 2030 scenario)
         future_ts = now + 5000.0 # Way in future
         ctx_future = {
-            "temporal": {"now": now, "max_skew_ms": max_skew},
+            "temporal": {"now": now, "max_skew_ms": max_skew, "timestamp": future_ts},
             "local": {"timestamp": future_ts}
         }
         
@@ -129,7 +140,7 @@ class RedTeamAudit(unittest.TestCase):
         # Case 2: Slightly Future (within skew)
         near_future = now + 50.0 # 50ms in future
         ctx_near = {
-            "temporal": {"now": now, "max_skew_ms": max_skew},
+            "temporal": {"now": now, "max_skew_ms": max_skew, "timestamp": near_future},
             "local": {"timestamp": near_future}
         }
         is_stale_near, _ = compute_stale_flag(ctx_near)
@@ -146,11 +157,11 @@ class RedTeamAudit(unittest.TestCase):
         
         # 1. NaN in Timestamp (Patched)
         ctx_nan_ts = {
-            "temporal": {"now": 1000.0, "max_skew_ms": 100.0},
+            "temporal": {"now": 1000.0, "max_skew_ms": 100.0, "timestamp": float('nan')},
             "local": {"timestamp": float('nan')}
         }
-        is_stale, errors = compute_stale_flag(ctx_nan_ts)
-        self.assertTrue("C.timestamp must be finite" in errors[0] if errors else False, "Validator must reject NaN timestamp")
+        is_stale, error_msg = compute_stale_flag(ctx_nan_ts)
+        self.assertTrue("C.timestamp must be finite" in error_msg if error_msg else False, "Validator must reject NaN timestamp")
         
         # 2. NaN in Confidence (New Check)
         # NaN comparisons are tricky (NaN < 0.9 is False).
@@ -180,9 +191,9 @@ class RedTeamAudit(unittest.TestCase):
             import random
             for i in range(100):
                 ctx = {"id": threading.get_ident(), "iter": i, "val": random.random()}
-                h = compute_context_hash(ctx)
+                h = compute_context_hashes(ctx)["total"]
                 # Verify stability
-                if compute_context_hash(ctx) != h:
+                if compute_context_hashes(ctx)["total"] != h:
                     errors.append("Hash instability in thread")
                     
         threads = [threading.Thread(target=runner) for _ in range(10)]
@@ -206,9 +217,9 @@ import os
 import json
 sys.path.append(os.getcwd())
 try:
-    from noe.noe_validator import compute_context_hash
+    from noe.noe_validator import compute_context_hashes
     ctx = {"a": 1, "b": [1, 2, 3], "c": "test"}
-    print(compute_context_hash(ctx))
+    print(compute_context_hashes(ctx)["total"])
 except Exception as e:
     print(f"ERROR: {e}")
 """

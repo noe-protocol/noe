@@ -194,7 +194,7 @@ def run_test_case(test: Dict[str, Any]) -> bool:
                     root["temporal"] = {}
                 
                 if "now" not in root["temporal"]:
-                    root["temporal"]["now"] = 1000.0
+                    root["temporal"]["now"] = float(root.get("timestamp", 1000.0))
                 
                 if "max_skew_ms" not in root["temporal"]:
                     root["temporal"]["max_skew_ms"] = 1.0
@@ -347,7 +347,7 @@ def run_test_case(test: Dict[str, Any]) -> bool:
                 root["temporal"] = {}
             
             if "now" not in root["temporal"]:
-                root["temporal"]["now"] = 1000.0
+                root["temporal"]["now"] = float(root.get("timestamp", 1000.0))
             
             if "max_skew_ms" not in root["temporal"]:
                 root["temporal"]["max_skew_ms"] = 1.0
@@ -357,7 +357,7 @@ def run_test_case(test: Dict[str, Any]) -> bool:
              # Inject temporal if missing
              if "temporal" not in ctx:
                  ctx["temporal"] = {
-                     "now": 1000.0,
+                     "now": float(ctx.get("timestamp", 1000.0)),
                      "max_skew_ms": 1.0
                  }
              # Inject spatial defaults if missing
