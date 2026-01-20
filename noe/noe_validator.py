@@ -265,7 +265,7 @@ def compute_stale_flag(C_total):
         # Strict context validation should catch missing 'now'/'skew' in shape check?
         return False, None
         
-    # Ensure types
+    import math
     try:
         now = float(now)
         skew = float(skew)
@@ -273,10 +273,20 @@ def compute_stale_flag(C_total):
     except (ValueError, TypeError):
         return False, "Non-numeric temporal fields"
 
+    # Strict Check: Reject NaN / Inf
+    if not (math.isfinite(now) and math.isfinite(skew) and math.isfinite(ts)):
+        return True, "C.timestamp must be finite (rejected NaN/Inf)"
+
     # Logic: if now - timestamp > skew -> Stale
     if _DEBUG_ENABLED: print(f"DEBUG: Stale Check: now={now}, ts={ts}, skew={skew}, diff={now-ts}")
+    
+    # 1. Past Staleness
     if (now - ts) > skew:
          return True, f"Timestamp {ts} is older than now {now} by > {skew}ms"
+         
+    # 2. Future Drift (Time Travel)
+    if (ts - now) > skew:
+         return True, f"Timestamp {ts} is in future relative to {now} by > {skew}ms"
     
     return False, None
 
