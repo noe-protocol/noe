@@ -7,7 +7,6 @@ Single source of truth for text normalization and operator extraction.
 """
 
 import re
-import re
 from typing import List, Set
 from noe.canonical import canonicalize_chain
 
