@@ -1,11 +1,11 @@
 # Threat Model & Security Limits
 
 > **Version**: 1.0  
-> **Applicability**: Noe Runtime v1.x
+> **Applicability**: Noe Runtime v1.0
 
 This document defines the security model, trust boundaries, and specific guarantees provided by the Noe runtime. It is intended for security auditors, system architects, and integrators.
 
----
+<br />
 
 ## 1. Adversary Model & Trust Boundaries
 
@@ -28,7 +28,7 @@ An adversary (e.g., a prompt-injected LLM) aims to:
 2.  **Bypass Auditing**: Execute an action without generating a traceable provenance record.
 3.  **Denial of Service**: Supply malformed chains or context to crash the validator loop.
 
----
+<br />
 
 ## 2. Assets & Failure Consequences
 
@@ -42,7 +42,7 @@ An adversary (e.g., a prompt-injected LLM) aims to:
 *   **False Negative (Safe Block)**: Operational inefficiency (robot stops unnecessarily). **Medium Severity**.
 *   **Validator Crash**: Availability loss. **High Severity**.
 
----
+<br />
 
 ## 3. Security Guarantees
 
@@ -62,7 +62,7 @@ If *any* required information is missing, stale, or malformed, the system **MUST
 *   Every decision produces a SHA-256 `action_hash` covering the canonicalized AST and the `context_hash`.
 *   It is computationally infeasible to produce the same `action_hash` with different context data or logic.
 
----
+<br />
 
 ## 4. Out of Scope & Residual Risks
 
@@ -83,7 +83,7 @@ Noe guards the **logic**, not the **physics**.
 *   **Noe Behavior**: Noe is a library, not a hypervisor. It returns a verdict; it does not physically disconnect power.
 *   **Mitigation**: Integrator discipline; hard-wired E-stops linked to the "Heartbeat" of the Noe Validator.
 
----
+<br />
 
 ## 5. Secure Operations Guide
 
