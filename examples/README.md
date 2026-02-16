@@ -16,7 +16,7 @@ This directory contains fully worked, realistic examples demonstrating Noe seman
 
 **Use Case**: Safety-critical human detection in robotics
 
----
+<br />
 
 ### 2. [Sensor-Drift Audit Request](02_sensor_drift_audit.md)
 
@@ -30,7 +30,7 @@ This directory contains fully worked, realistic examples demonstrating Noe seman
 
 **Use Case**: Sensor validation and audit trail in safety-critical systems
 
----
+<br />
 
 ## Structure
 
@@ -44,12 +44,16 @@ Each example includes:
 6. **Context (After)**: Updated context (for delivery/audit examples)
 7. **Key Insights**: Takeaways and design principles
 
+<br />
+
 ## Testing
 
 These examples can be converted into conformance tests by:
 1. Extracting the chain and context
 2. Adding to appropriate `nip011_*.json` file
 3. Verifying expected result matches actual output
+
+<br />
 
 ## Integration
 
