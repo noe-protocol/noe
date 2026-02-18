@@ -22,7 +22,9 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 # Adjust this import to match your runtime entrypoint
-from noe.noe_parser import run_noe_logic, compute_action_hash
+from noe.noe_parser import run_noe_logic
+from noe.provenance import compute_action_hash
+from noe.canonical import canonical_json
 
 
 # -----------------------------
@@ -30,17 +32,8 @@ from noe.noe_parser import run_noe_logic, compute_action_hash
 # -----------------------------
 
 
-def canonical_json(obj: Any) -> bytes:
-    return json.dumps(
-        obj,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    ).encode("utf-8")
-
-
 def hash_json(obj: Any) -> str:
-    return hashlib.sha256(canonical_json(obj)).hexdigest()
+    return hashlib.sha256(canonical_json(obj).encode("utf-8")).hexdigest()
 
 
 # -----------------------------
