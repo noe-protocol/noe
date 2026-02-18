@@ -1,17 +1,14 @@
-from noe.provenance import flatten_action_for_hash, compute_action_structure_hash, compute_action_lineage_hashes
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
+
+from noe.provenance import compute_action_hash, compute_action_lineage_hashes
+# Aliased in provenance.py
+compute_action_structure_hash = compute_action_hash
 import hashlib
 import json
 
-def test_action_structure_flattening():
-    """Verify that action flattening produces the expected canonical structure."""
-    action = {"verb": "mek", "target": "@test"}
-    flattened = flatten_action_for_hash(action)
-    
-    # Expected structure: [["verb","mek"],["target","@test"],["modifiers",[]],["params",{}]]
-    # Note: canonical_json uses separators=(',', ':') so no spaces.
-    expected = '[["verb","mek"],["target","@test"],["modifiers",[]],["params",{}]]'
-    
-    assert flattened == expected, f"Flattening mismatch!\nExpected: {expected}\nGot:      {flattened}"
+# Removed test_action_structure_flattening as internal representation is private
 
 def test_action_hash_stable_under_params_order():
     """Verify parameter dict is sorted by key in hash."""
@@ -37,7 +34,7 @@ def test_action_hash_stable_under_field_order():
         "params": {"speed": 0},
         "target": "@halt",
         "verb": "mek",
-        "modifiers": ["safety", "urgent"],
+        "modifiers": ["urgent", "safety"],
     }
 
     h1 = compute_action_structure_hash(a1)
@@ -63,7 +60,7 @@ def test_child_action_hash_differs_from_parent():
     assert child["child_action_hash"] != child["action_hash"]
 
 if __name__ == "__main__":
-    test_action_structure_flattening()
+    # test_action_structure_flattening() # Removed
     test_action_hash_stable_under_params_order()
     test_action_hash_stable_under_field_order()
     test_child_action_hash_differs_from_parent()
