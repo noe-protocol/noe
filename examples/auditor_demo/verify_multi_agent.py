@@ -11,13 +11,10 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from noe.noe_parser import run_noe_logic
 from noe.provenance import compute_action_hash
-
-# Helper for consistent JSON hashing
-def canonical_json(obj):
-    return json.dumps(obj, sort_keys=True, separators=(',', ':')).encode('utf-8')
+from noe.canonical import canonical_json
 
 def hash_json(obj):
-    return hashlib.sha256(canonical_json(obj)).hexdigest()
+    return hashlib.sha256(canonical_json(obj).encode("utf-8")).hexdigest()
 
 
 def compute_context_hashes(c_root, c_domain, c_local, c_safe):
@@ -52,13 +49,13 @@ def build_certificate(
 
     action_hash = None
     if result.get("domain") == "list" and result.get("value"):
-        item = result["value"][0]
-        if isinstance(item, dict):
-            action_hash = item.get("action_hash")
-    
-    # Fallback action hash if missing
-    if not action_hash:
-        action_hash = hashlib.sha256(json.dumps(result.get("value", []), sort_keys=True).encode()).hexdigest()
+        # Extract first action from list
+        for item in result["value"]:
+            if isinstance(item, dict) and item.get("type") == "action":
+                action_hash = compute_action_hash(item)
+                break
+    elif result.get("domain") == "action" and isinstance(result.get("value"), dict):
+        action_hash = compute_action_hash(result["value"])
 
     return {
         "noe_version": "v1.0-rc1",
