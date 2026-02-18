@@ -35,37 +35,37 @@ from verify_shipment import (
 
 def build_c_local_stale(now_ts: float) -> dict:
     # 3 fresh sensors, 1 STALE sensor
-    fresh_ts = now_ts - 0.5
-    stale_ts = now_ts - 600.0  # 10 minutes old! (Limit is 5.0s)
+    fresh_ts = int((now_ts - 0.5) * 1_000_000)
+    stale_ts = int((now_ts - 600.0) * 1_000_000)  # 10 minutes old!
     
     return {
         "literals": {
             "@temperature_ok": {
-                "value": True, "timestamp": fresh_ts, "source": "temp_probe_01", "certainty": 0.99
+                "value": True, "timestamp_us": fresh_ts, "source": "temp_probe_01", "certainty": 0.99
             },
             "@location_ok": {
-                "value": True, "timestamp": fresh_ts, "source": "dock_rfid_07", "certainty": 0.95
+                "value": True, "timestamp_us": fresh_ts, "source": "dock_rfid_07", "certainty": 0.95
             },
             "@chain_of_custody_ok": {
-                "value": True, "timestamp": fresh_ts, "source": "custody_ledger", "certainty": 1.0
+                "value": True, "timestamp_us": fresh_ts, "source": "custody_ledger", "certainty": 1.0
             },
             # STALE SENSOR
             "@human_clear": {
                 "value": True, 
-                "timestamp": stale_ts, 
+                "timestamp_us": stale_ts, 
                 "source": "zone_lidar_02", 
                 "certainty": 0.98
             },
             "@release_pallet": {
                 "value": "action_target",
-                "timestamp": fresh_ts,
+                "timestamp_us": fresh_ts,
                 "type": "control_point"
             }
         },
         "temporal": {
-            "now": now_ts,
-            "timestamp": now_ts,
-            "max_skew_ms": 100.0
+            "now_us": int(now_ts * 1_000_000),
+            "timestamp_us": int(now_ts * 1_000_000),
+            "max_skew_us": 100_000
         },
         "spatial": {
             "thresholds": {"near": 2.0, "far": 10.0}, 
