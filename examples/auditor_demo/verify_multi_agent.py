@@ -72,7 +72,11 @@ def build_certificate(
         "outcome": {
             "domain": result.get("domain"),
             "value": result.get("value"),
-            "action_hash": action_hash
+            "action_hash": action_hash,
+            "meta": {
+                "safe_context_hash": hashes["safe"],
+                "mode": "lenient"
+            }
         },
         "evaluation": {
             "mode": "lenient", # Multi-agent uses lenient
