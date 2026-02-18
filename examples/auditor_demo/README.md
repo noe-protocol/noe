@@ -386,7 +386,7 @@ This enables:
 
 <br />
 
-## Engineering Constraints: The "Honest" Defense
+## Engineering Constraints:
 
 * **"The Latency Tax":** Noe is a **Supervisor**, not a Reflex. You use Noe to decide *if* the robot enters the room (1Hz), not to balance the motors (1kHz).
 * **"Garbage-In, Hash-Committed-Garbage-Out":** Noe does not solve sensor truth; it solves **Standard of Care**. By hash-committing the lie, Noe **crystallizes the state**. You can prove exactly which sensor lied, shifting liability from the System Integrator to the Component Vendor.
