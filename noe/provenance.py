@@ -28,6 +28,15 @@ from noe.canonical import canonical_json, canonicalize_chain
 # Semantics version (NIP-005 K3 logic + operator definitions)
 SEMANTICS_VERSION = "NIP-005-v1.0"
 
+# Outcome fields to exclude from action hash (NIP-010)
+OUTCOME_FIELDS = {
+    "status",
+    "verified",
+    "audit_status",
+    "expires_at_ms",
+    "observed_at_ms"
+}
+
 def compute_registry_hash() -> str:
     """
     Compute SHA-256 hash of the operator registry to bind operator semantics.
@@ -64,59 +73,100 @@ def _sha256_hex(data: str) -> str:
 # canonical_json imported from noe.canonical to ensure consistency
 
 
-def flatten_action_for_hash(action: Dict[str, Any]) -> str:
+
+def _normalize_action(obj: Any) -> Any:
     """
-    Produce a canonical, hashable representation of an action.
+    Recursively normalize an action object for deterministic hashing.
 
-    The goal is that two actions which are semantically identical
-    produce identical flattened strings, regardless of Python dict
-    ordering or internal representation.
-
-    Standard fields:
-      - verb:      action["verb"]            (str)
-      - target:    action.get("target")      (literal or None)
-      - modifiers: sorted list of modifiers  (list[str])
-      - params:    canonical JSON of params  (dict)
-
-    Unknown extra fields are ignored for hashing so that
-    implementations can add metadata without breaking determinism.
+    Normalization Rules:
+      - Dicts: Remove internal keys ('_' prefix, 'hash', 'meta'), sort keys, recurse.
+      - Lists/Tuples: Normalize each element.
+      - Primitives: Return as-is.
+      
+    Exclude context-derived outcome fields (status, verified, expires_at) from action hash
+    to ensure action_hash represents the PROPOSAL only, not the execution outcome.
     """
+    # Dict case
+    if isinstance(obj, dict):
+        normalized = {}
+        # CRITICAL: Exclude both static metadata AND context-derived outcome fields
+        # UNLESS explicitly requested (e.g. for event/observation hashing)
+        # Default behavior (proposal identity) excludes status/verified
+        
+        # Base exclusion list (child_action_hash is INCLUDED for pointer semantics)
+        EXCLUDED_KEYS = {
+            "hash", "meta",                              # Static metadata
+            "action_hash",                              # Self-reference
+            "provenance",                                # Provenance data (contains self-hash)
+            "child_event_hash", "event_hash"            # Event hashes
+        }
+        
+        # Pointer Semantics (v1.0 Safety Kernel):
+        # If child_action_hash is present (e.g. noq), use it for identity
+        # and EXCLUDE the full 'target' dict to ensure O(1) hashing from the parent's perspective
+        # and stability against nested outcome changes.
+        if "child_action_hash" in obj:
+            EXCLUDED_KEYS.add("target")
+        
+        # If strict "proposal only" hashing is desired (default for action_hash),
+        # exclude mutable outcome fields.
+        # If computing "event hash", include them.
+        include_outcome = obj.get("_include_outcome_in_hash", False)
+        
+        # Use global OUTCOME_FIELDS for v1.0 allow-list
+        if not include_outcome:
+            EXCLUDED_KEYS.update(OUTCOME_FIELDS)
+            
+        for k in sorted(obj.keys()):
+            # Skip internal / outcome keys
+            if isinstance(k, str) and (k.startswith("_") or k in EXCLUDED_KEYS):
+                continue
+            normalized[k] = _normalize_action(obj[k])
+        return normalized
 
-    verb = action.get("verb")
-    target = action.get("target")
+    # List/Tuple case
+    if isinstance(obj, (list, tuple)):
+        return [_normalize_action(x) for x in obj]
 
-    # Modifiers: default to empty list, always sorted to ensure stability.
-    modifiers_raw = action.get("modifiers", [])
-    if modifiers_raw is None:
-        modifiers_raw = []
-    if isinstance(modifiers_raw, (set, tuple)):
-        modifiers = sorted(list(modifiers_raw))
-    else:
-        modifiers = sorted(list(modifiers_raw))
-
-    # Params: any extra structured data attached to the action.
-    params_raw = action.get("params", {})
-    if params_raw is None:
-        params_raw = {}
-
-    # Canonical structure that we actually hash.
-    canonical_struct: List[Tuple[str, Any]] = [
-        ("verb", verb),
-        ("target", target),
-        ("modifiers", modifiers),
-        ("params", params_raw),
-    ]
-
-    return canonical_json(canonical_struct)
+    # Primitives
+    return obj
 
 
-def compute_action_hash(action: Dict[str, Any]) -> str:
+def compute_action_hash(action_obj: Dict[str, Any]) -> str:
     """
-    Compute the canonical SHA256 hash of a single action structure.
-    (Matches noe_parser expectation).
+    Compute a deterministic SHA-256 hash for an action object.
+
+    The hash depends only on the normalized action structure and nested targets,
+    independent of evaluation mode or context hash.
+    
+    Side Effect:
+      - Recursively computes and sets 'action_hash' on nested action targets.
+      - Sets 'child_action_hash' on the parent action.
     """
-    flattened = flatten_action_for_hash(action).encode("utf-8")
-    return hashlib.sha256(flattened).hexdigest()
+    if not isinstance(action_obj, dict):
+        # Allow checking hash of non-dicts? No, expects action object.
+        # But for robustness in tests we might want to fail gracefully?
+        # NIP-010 says action hash is for the Action Descriptor.
+        raise ValueError("compute_action_hash expects a dict.")
+    
+    # Handle nested action targets (recursive hash)
+    target = action_obj.get("target")
+    if isinstance(target, dict) and target.get("type") == "action":
+        # Recursively compute hash for child action if missing
+        if "action_hash" not in target:
+            child_hash = compute_action_hash(target)
+            target["action_hash"] = child_hash
+        # Set child_action_hash on parent
+        action_obj["child_action_hash"] = target.get("action_hash")
+    
+    # Normalize and hash
+    normalized = _normalize_action(action_obj)
+    
+    # Use canonical_json for serialization (ensure_ascii=True, allow_nan=False)
+    # This fixes the divergence with the parser's old ensure_ascii=False
+    payload = canonical_json(normalized).encode("utf-8")
+
+    return hashlib.sha256(payload).hexdigest()
 
 # Alias for internal clarity if needed
 compute_action_structure_hash = compute_action_hash
