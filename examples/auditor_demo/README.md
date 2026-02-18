@@ -1,5 +1,16 @@
 # Noe Auditor Demo: Deterministic Execution Certificates
 
+**Reference Standards:**
+
+| NIP | Scope |
+|-----|-------|
+| NIP-005 | Chain Grammar: syntax and evaluation rules for Noe expressions |
+| NIP-009 | Context Specification: layered context model (`C_root`, `C_domain`, `C_local` -> `C_safe`) |
+| NIP-010 | Provenance Certificates: schema and replay rules for execution evidence |
+| NIP-015 | Strict Mode: deterministic evaluation constraints and error semantics |
+
+**Status / Commit:** This README describes the behavior of the reference evaluator as of commit `d0bc1a9`. If behavior differs in your local checkout, treat the code as authoritative.
+
 This demo demonstrates how Noe provides **hash-committed execution certificates** to resolve the liability bottleneck in autonomous systems. Noe implements a deterministic provenance format for autonomous decisions, providing an evidence trail intended to support admissibility in safety-critical domains.
 
 <br />
@@ -30,6 +41,8 @@ examples/auditor_demo/
 +-- shipment_certificate_strict.json       <-- Output: happy-path certificate
 +-- shipment_certificate_REFUSED.json      <-- Output: fail-stop certificate
 +-- shipment_certificate_epistemic.json    <-- Output: epistemic-gap certificate
++-- hallucination_certificate_*.json       <-- Output: hallucination scenario certificates
++-- cert_green.json / cert_yellow.json / cert_red.json  <-- Output: multi-agent certificates
 +-- ...
 ```
 
@@ -43,18 +56,32 @@ Given the same chain and `C_safe`, the outcome is identical across runs under th
 
 > **Portability caveat:** Bit-identical replay is only claimed for runtimes that match the reference canonicalization exactly (see NIP-011 conformance vectors). We do not claim cross-runtime or cross-library equivalence without passing those vectors.
 
-#### Determinism Preconditions
+<br />
+
+### Determinism Preconditions
 
 Bit-identical replay is not a free property. The following constraints make it true in the reference evaluator:
 
-* **Canonical JSON serialization (reference runtime):** All context hashes use `canonical_json()` ([`noe/canonical.py:canonical_json`](file:///Users/shaunogilvy/Downloads/noe_reference%202/noe/canonical.py)): `json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False)`. This is the single source of truth for canonical serialization.
-* **Action hashing serialization:** `compute_action_hash()` in [`noe/noe_parser.py`](file:///Users/shaunogilvy/Downloads/noe_reference%202/noe/noe_parser.py) uses `json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False)`. Note: this uses `ensure_ascii=False`, which differs from `canonical_json()`. Both produce identical output for ASCII-only content (which the demo's action structures are), but may diverge on non-ASCII strings. This is an open consistency item.
-* **No floats in hashed paths:** All numeric values in context are integers (e.g., `int64` microsecond timestamps, millicelsius, millimeters). `NaN`/`Inf` are rejected at context validation and by `canonical_json(allow_nan=False)`.
-* **Stable hashing:** SHA-256 over canonical JSON bytes. No use of Python's built-in `hash()` (which is randomized per-process via `PYTHONHASHSEED`).
 * **No wall-clock calls during evaluation:** Staleness checks use `C_safe.temporal.now_us` (frozen at context assembly time), never `time.time()` during chain evaluation. The evaluator is a pure function of `(chain, C_safe)`.
+* **No floats in hashed paths:** All numeric values in context are integers (e.g., `int64` microsecond timestamps, millicelsius, millimeters). `NaN`/`Inf` are rejected by `canonical_json(allow_nan=False)` (guaranteed by shared `noe.canonical` module).
+* **Stable hashing:** SHA-256 over canonical JSON bytes. No use of Python's built-in `hash()` (which is randomized per-process via `PYTHONHASHSEED`).
 * **Deterministic map ordering:** All context dicts are serialized with `sort_keys=True` before hashing.
-* **Pinned runtime:** The reference evaluator targets CPython 3.10+ with deterministic JSON and integer-only hashed paths.
-* **Chain canonicalization:** The chain string is normalized via `canonicalize_chain()` ([`noe/canonical.py:canonicalize_chain`](file:///Users/shaunogilvy/Downloads/noe_reference%202/noe/canonical.py)): Unicode NFKC normalization, whitespace collapsed to single spaces, leading/trailing whitespace stripped.
+* **Pinned runtime:** The reference evaluator targets CPython 3.10+, and all hashed artifacts use `noe.canonical.canonical_json()` (sort keys, no `NaN`/`Inf`).
+* **Chain canonicalization:** The chain string is normalized via `canonicalize_chain()` (defined in `noe/canonical.py`): Unicode NFKC normalization, whitespace collapsed to single spaces, leading/trailing whitespace stripped. Certificates canonicalize the chain before hashing (via `noe.provenance`). Replay should evaluate the canonicalized chain (or use an evaluator that canonicalizes internally).
+
+<br />
+
+### Canonicalization: Unified Implementation
+
+The reference auditor demo and provenance layer use a **single source of truth** for JSON canonicalization: `noe.canonical.canonical_json()`.
+
+| Parameter | Value | Reason |
+|-----------|-------|--------|
+| `ensure_ascii` | `True` | Maximum compatibility; forces Unicode to escape sequences (e.g. `\uXXXX`). |
+| `allow_nan` | `False` | Determinism; rejects `NaN` / `Infinity` which are invalid in standard JSON. |
+| Returns | `str` | Standardized string format before encoding to bytes for hashing. |
+
+This ensures that context hashes are bit-identical for certificates emitted by the auditor demo and any component that uses `noe.canonical.canonical_json()`.
 
 <br />
 
@@ -66,19 +93,20 @@ Shows the **Safety Kernel** filtering a raw context through the projection funct
 
 #### `shi` Lookup Logic (Reference Implementation)
 
-The `shi` operator ([`noe/noe_parser.py:_apply_unary_op`](file:///Users/shaunogilvy/Downloads/noe_reference%202/noe/noe_parser.py), line 1366) works as follows:
+The `shi` operator (implemented in `noe/noe_parser.py`, `_apply_unary_op()`) works as follows:
 
 1. Extract the literal key from the operand (e.g., `@temperature_ok`).
-2. Retrieve `C.modal.knowledge` from the effective context.
-3. Look up the key (with and without `@` prefix fallback).
+2. Retrieve `C.modal` from the effective context. If `C.modal` is missing or not a dict, return `"undefined"`.
+3. Get `knowledge` map from `C.modal` (defaults to `{}`).
+4. Look up the key in `C.modal.knowledge` (tries both `key` and `@key` forms).
 
 | Condition | Result in strict mode | Result in non-strict mode |
 |-----------|----------------------|--------------------------|
-| `C.modal` is missing or not a dict | `"undefined"` (from `_ensure_context_for_op` guard) | `"undefined"` |
-| Key not found in `C.modal.knowledge` | Error: `ERR_EPISTEMIC_MISMATCH` | `"undefined"` |
-| Key found in `C.modal.knowledge` | Returns the stored truth value (e.g., `true`) | Returns the stored truth value |
+| `C.modal` is missing or not a dict | `"undefined"` | `"undefined"` |
+| Key not found in `C.modal.knowledge` | Error object: `{"domain": "error", "code": "ERR_EPISTEMIC_MISMATCH", ...}` | `"undefined"` |
+| Key found in `C.modal.knowledge` | Returns the stored value (e.g., `true`) | Returns the stored value |
 
-**Strict mode behavior:** In strict mode, a missing key in `C.modal.knowledge` returns an `ERR_EPISTEMIC_MISMATCH` error object (not plain `Undefined`). When this error flows into an action guard (`khi`), it triggers non-execution (the fail-stop invariant).
+**Strict mode behavior:** In strict mode, a missing key in `C.modal.knowledge` returns an `ERR_EPISTEMIC_MISMATCH` error object (not plain `"undefined"`). When this error object flows into an action guard (`khi`), it triggers non-execution (the fail-stop invariant).
 
 The same pattern applies to `vek` (checks `C.modal.belief`, falling back to `C.modal.knowledge`) and `sha` (checks `C.modal.certainty` against a threshold, then looks up truth value in `C.modal.knowledge` or `C.modal.belief`).
 
@@ -105,7 +133,7 @@ Generation of **Execution Certificates**: SHA-256 commitments over the logic, co
 * *Perception Truth:* The truth of upstream sensor data. If a sensor lies, Noe hash-commits the lie, crystallizing it for forensic analysis, not validating it.
 * *Proposer Identity:* Unless digital signatures are applied externally (see Anchoring section).
 * *System-level Liveness:* Recovery, fault tolerance, and availability guarantees are out of scope.
-* *Remote Execution Integrity:* This demo assumes the validator is the local root of trust.
+* *Remote Execution Integrity:* This demo assumes the validator is the local root of trust. Production deployments should pair certificates with code-signing / build attestation and issuer signatures.
 
 **Root-of-Trust Assumptions:**
 
@@ -193,7 +221,7 @@ Shows Noe blocking an action where a sensor is fresh but **noisy/uncertain** (Co
 
 Shows Noe blocking a dangerous maneuver when a Vision Model (VLM) hallucinates a door, but Lidar confirms a solid wall.
 
-* **Logic:** `shi @visual_door an shi @lidar_clear` (`an` = logical AND)
+* **Logic:** `shi @visual_door_detect an shi @lidar_depth_open` (`an` = logical AND)
 * **Result:** `True an False` -> **Safe Halt**.
 
 <br />
@@ -222,71 +250,49 @@ Noe provides the **Safety Floor**: a deterministic, symbolic validation layer th
 
 ## How to Read a Noe Execution Certificate (NIP-010)
 
-A Noe certificate is a frozen evidence object. The JSON keys shown below are copied from the current demo output (`shipment_certificate_strict.json`). If the reference evaluator changes field names, this section must be updated in the same PR.
+A Noe certificate is a frozen evidence object. The JSON schema shown below is derived from the current demo output (`shipment_certificate_strict.json`). If the reference evaluator or demo scripts change field names, this section must be updated in the same PR.
 
-**Replay anchor:** Deterministic replay requires only `chain` + `context_snapshot.safe`. The `root`, `domain`, and `local` layers are included for traceability and independent hash verification, but are not inputs to the replay function. `C_safe` MUST include all policy thresholds and gate definitions required for evaluation; replay MUST NOT consult external configuration. Replay MUST use the evaluator pinned in `evaluation` (or an implementation proven equivalent via NIP-011 conformance vectors).
+**Replay anchor:** Deterministic replay requires only `chain` + `context_snapshot.safe`. The `root`, `domain`, and `local` layers are included for traceability and independent hash verification, but are not inputs to the replay function. `C_safe` MUST include all policy thresholds and gate definitions required for evaluation; replay MUST NOT consult external configuration. Replay MUST use the evaluator pinned in `evaluation` (or an implementation proven equivalent via NIP-011 conformance vectors). Strict mode additionally enforces ≤ 1 emitted action per evaluation (NIP-015).
 
-### Action Hashing: What the Code Actually Computes
+### Action Hashing: Single Source of Truth
 
-The `action_hash` field in this demo's certificates is computed by [`noe/noe_parser.py:compute_action_hash()`](file:///Users/shaunogilvy/Downloads/noe_reference%202/noe/noe_parser.py) (line 297). This function:
+Action hashing is centralized in **`noe/provenance.py:compute_action_hash()`**.
 
-1. Calls `_normalize_action(action_obj)` which recursively strips:
-   - Keys: `hash`, `meta`, `action_hash`, `provenance`, `event_hash`, `child_event_hash`
-   - Outcome fields: `status`, `verified`, `audit_status`, `expires_at_ms`, `observed_at_ms`
-   - Any key starting with `_`
-   - If `child_action_hash` is present, the `target` dict is excluded (pointer semantics)
-2. Sorts remaining keys and serializes with `json.dumps(sort_keys=True, separators=(",", ":"), ensure_ascii=False)`
-3. Returns `SHA-256(serialized_bytes)`
+This function guarantees:
+1.  **Normalization:** Filters volatile fields (`status`, `provenance`, timestamps, etc.) and sorts keys.
+2.  **Canonical Serialization:** Uses `noe.canonical.canonical_json()` (`ensure_ascii=True`, `allow_nan=False`).
+3.  **Stability:** Returns a consistent SHA-256 hash regardless of where it is called (parser, runtime, or auditor tools).
 
-**What remains after normalization** (for the demo's simple action): `type`, `verb`, `target`, `modifiers`, `params`, `child_action_hash` (if present). Context, chain, and timestamps are excluded.
-
-> **Note:** A separate function `compute_execution_request_hash()` exists in [`noe/provenance.py`](file:///Users/shaunogilvy/Downloads/noe_reference%202/noe/provenance.py) (line 162). It hashes `["noe.action.v1", chain, h_total, domain_pack_hash]` and is used by the runtime, but it is **not** the `action_hash` in the demo certificates. Also note: `provenance.py` has its own `compute_action_hash()` using `flatten_action_for_hash()` (hashing only `verb`, `target`, `modifiers`, `params`). The demo's `verify_shipment.py` imports from `noe_parser`, not `provenance`. These two implementations hash different field sets.
+The outdated divergent implementations in `noe_parser.py` and demo scripts have been removed and replaced with imports from `noe.provenance`.
 
 ### Certificate Schema (Current Demo Output)
+
+The following schema is from `shipment_certificate_strict.json` (Demo 1). Other demos produce slightly different certificate structures (e.g., `verify_multi_agent.py` adds a `signatures` field and `scenario` field).
 
 ```json
 {
   "noe_version": "v1.0-rc1",
   "spec_version": "NIP-010-draft",
-  "chain": "shi @temperature_ok an shi @location_ok an shi @chain_of_custody_ok an shi @human_clear khi sek mek @release_pallet sek nek",
-  "created_at": "2026-01-19T03:04:27",
+  "chain": "shi @temperature_ok an shi @location_ok ...",
+  "created_at": "2026-02-18T06:14:49Z",
   "context_hashes": {
-    "root": "41caa2fb...",
-    "domain": "023857ab...",
-    "local": "9412c06c...",
-    "safe": "440ff271..."
+    "root": "<sha256>",
+    "domain": "<sha256>",
+    "local": "<sha256>",
+    "safe": "<sha256>"
   },
   "context_snapshot": {
     "root": { "...": "full C_root" },
     "domain": { "...": "full C_domain" },
-    "local": {
-      "literals": { "@temperature_ok": { "value": true, "timestamp_us": 1768791867129704, "source": "temp_probe_01" }, "...": "..." },
-      "temporal": { "now_us": 1768791867629704, "timestamp_us": 1768791867629704, "max_skew_us": 100000 },
-      "modal": { "knowledge": { "@temperature_ok": true, "@location_ok": true, "...": "..." } },
-      "...": "full C_local"
-    },
+    "local": { "...": "full C_local" },
     "safe": { "...": "full C_safe (THE replay anchor)" }
   },
   "outcome": {
     "domain": "list",
-    "value": [
-      {
-        "type": "action",
-        "verb": "mek",
-        "target": { "value": "action_target", "timestamp_us": 1768791867129704, "type": "control_point" },
-        "action_hash": "eb27f0d6...",
-        "event_hash": "eb27f0d6...",
-        "provenance": {
-          "action_hash": "eb27f0d6...",
-          "event_hash": "eb27f0d6...",
-          "context_hash": "ca0a68e2...",
-          "source": "shi @temperature_ok an ... sek nek"
-        }
-      }
-    ],
-    "action_hash": "eb27f0d6...",
+    "value": [ { "type": "action", "verb": "mek", "...": "..." } ],
+    "action_hash": "<sha256>",
     "meta": {
-      "safe_context_hash": "440ff271...",
+      "safe_context_hash": "<sha256>",
       "mode": "strict"
     }
   },
@@ -298,35 +304,32 @@ The `action_hash` field in this demo's certificates is computed by [`noe/noe_par
 }
 ```
 
-### Field-by-Field Reference
+### Field Reference
 
-| Field | Source in code | Description |
-|-------|---------------|-------------|
-| `chain` | `SHIPMENT_CHAIN` constant in `verify_shipment.py` | The Noe expression that was evaluated. Passed through `canonicalize_chain()` before hashing, but stored as-is in the certificate. |
-| `created_at` | `time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())` | Wall-clock UTC issuance time. **Not part of the replay determinism invariant.** Two replays of the same decision produce identical evaluation hashes but different `created_at` values. No trailing `Z`; format is ISO 8601 without timezone designator (implied UTC). |
-| `context_hashes.safe` | `SHA-256(canonical_json(C_safe))` | Hash of the full projected safe context. The primary replay anchor hash. |
-| `context_hashes.root/domain/local` | Same pattern over each layer | Traceability hashes. Not required for replay, but allow independent verification of each context layer. |
-| `context_snapshot.safe` | The actual `C_safe` dict | Full projected context. The replay function loads this and re-evaluates `chain` against it. |
-| `outcome.domain` | Evaluation result domain | `"list"` for action outcomes, `"undefined"` for non-execution, `"error"` for error states. |
-| `outcome.value[].action_hash` | `noe_parser.compute_action_hash()` | NIP-010 action structure hash. See normalization rules above. |
-| `outcome.value[].event_hash` | `noe_parser.compute_action_hash()` with `_include_outcome_in_hash=True` | Includes outcome fields (status, verified, etc.) when present. In the happy-path demo, equals `action_hash` because no outcome fields exist on the action object at hash time. |
-| `outcome.action_hash` | Same as `outcome.value[0].action_hash` | Top-level copy for convenience. Must equal the per-item hash for single-action outcomes. |
-| `outcome.meta.safe_context_hash` | `SHA-256(canonical_json(C_safe))` | Same value as `context_hashes.safe`. Duplicated here for self-contained outcome verification. |
-| `outcome.meta.mode` | `"strict"` | Evaluation mode used. |
-| `evaluation.nip` | Hardcoded list | NIPs the evaluator claims compliance with. |
+| Field | Source | Notes |
+|-------|--------|-------|
+| `chain` | `SHIPMENT_CHAIN` constant in each demo | Stored as-is. Canonicalized via `canonicalize_chain()` (NFKC) before hashing in `noe/provenance.py`. |
+| `created_at` | `time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())` | Wall-clock UTC (ISO 8601 with `Z` suffix). **Not part of the replay determinism invariant.** |
+| `context_hashes.safe` | `SHA-256(canonical_json(C_safe))` | Computed using the shared `noe.canonical.canonical_json()` (`ensure_ascii=True`, `allow_nan=False`). |
+| `context_snapshot.safe` | The actual `C_safe` dict | Full projected context. Replay loads this and re-evaluates `chain` against it. |
+| `outcome.domain` | Evaluation result | `"list"` for standard action outcomes (even single actions), `"undefined"` for non-execution, `"error"` for errors. |
+| `outcome.action_hash` | `noe.provenance.compute_action_hash()` | **Unified.** In strict mode, the top-level `outcome.action_hash` is computed from the single emitted action: `compute_action_hash(outcome.value[0])`. Lenient/multi-agent certificates define their hashing rule in the emitting script (e.g., `verify_multi_agent.py`). |
+| `outcome.meta.safe_context_hash` | `SHA-256(canonical_json(C_safe))` | Explicitly injected in all demos to bind the result to the safe context. |
+| `evaluation.mode` | Hardcoded | `"strict"` in Demos 1-3 (safety kernel); `"lenient"` in Demo 4 (multi-agent arbitration layer, above the safety kernel). |
 
 ### Non-Execution Paths
 
-When evaluation yields `domain: "undefined"` or `domain: "error"`, the reference runtime does not compute action hashes. The demo follows this rule: refusal certificates (e.g., `shipment_certificate_REFUSED.json`) contain no `action_hash` field in the outcome.
+When evaluation yields `domain: "undefined"` or `domain: "error"`, the `build_provenance_record()` function in `noe/provenance.py` sets `action_hash = None`.
 
 ### The Auditor's Checklist
 
 To verify a Noe decision, an auditor performs the following steps:
 
-1. **Recompute context hashes:** `SHA-256(canonical_json(context_snapshot.safe))` must equal `context_hashes.safe`. Optionally repeat for `root`, `domain`, `local`.
-2. **Deterministic replay:** Load `chain` and `context_snapshot.safe` into the reference evaluator (`noe_parser.run_noe_logic()`) under `strict` mode. The evaluator version should match the one used at issuance.
-3. **Validate outcome:** Confirm the replayed `outcome.domain`, `outcome.value`, and each `outcome.value[].action_hash` match the certificate.
-4. **Verify non-execution (if applicable):** If `outcome.domain` is `"undefined"`, confirm no `action_hash` fields are present.
+1. **Recompute context hashes:** Hash `context_snapshot.safe` using `noe.canonical.canonical_json()`. Verify it matches `context_hashes.safe`.
+2. **Deterministic replay:** Load `chain` and `context_snapshot.safe` into the reference evaluator (`noe_parser.run_noe_logic()`) under the mode specified in `evaluation.mode`.
+3. **Validate outcome:** Confirm the replayed `outcome.domain` and `outcome.value` match the certificate.
+4. **Verify action hash (if applicable):** In strict mode, verify `outcome.domain == "list"` and `len(outcome.value) == 1`, then compute `action_hash = noe.provenance.compute_action_hash(outcome.value[0])` and compare to `outcome.action_hash`.
+5. **Verify non-execution (if applicable):** If `outcome.domain` is `"undefined"`, confirm no `action_hash` fields are present.
 
 <br />
 
@@ -346,19 +349,20 @@ This demo does not implement signing or anchoring. It produces the hash-committe
 
 <br />
 
+
+<br />
+
 ## Planned / Future Extensions
 
-The following are not implemented in the current reference evaluator or demo output. They are planned for future versions:
+The following are not implemented in the current reference evaluator or demo output:
 
 | Feature | Purpose | Status |
 |---------|---------|--------|
 | `hash_domain` field | Protocol version tag (e.g., `"noe-cert:v1"`) to prevent cross-protocol hash collisions | Planned |
 | `certificate_hash` field | Top-level SHA-256 commitment over the certificate body for external anchoring | Planned |
 | `evaluator_version` field | Git commit or semver of the evaluator binary (e.g., `noe-python-ref@v1.0.0`) | Planned |
-| `registry_hash` field | SHA-256 of `registry.json`, pins all Tier-0 + Tier-1 glyph semantics | Planned |
-| `created_at_utc` with `Z` | ISO 8601 with explicit timezone designator, replacing ambiguous `created_at` | Planned |
-| Unified `ensure_ascii` | Align `noe_parser.compute_action_hash()` with `canonical_json()` on `ensure_ascii` flag | Open consistency item |
-| Unified `compute_action_hash` | Reconcile the two implementations in `noe_parser.py` vs `provenance.py` | Open consistency item |
+| `registry_hash` in certificate | Already computed by `provenance.py:compute_registry_hash()` but not yet included in demo certificates | Planned |
+
 
 <br />
 
