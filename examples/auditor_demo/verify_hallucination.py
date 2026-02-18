@@ -404,7 +404,7 @@ def build_certificate(scenario_name: str,
                       c_local: Dict[str, Any],
                       c_safe: Dict[str, Any],
                       result: Dict[str, Any]) -> Dict[str, Any]:
-    now_iso = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
+    now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     hashes = compute_context_hashes(c_root, c_domain, c_local, c_safe)
 
     cert: Dict[str, Any] = {
@@ -422,7 +422,11 @@ def build_certificate(scenario_name: str,
         "outcome": {
             "domain": result.get("domain"),
             "value": result.get("value"),
-            "meta": result.get("meta", {}),
+            "meta": {
+                "safe_context_hash": hashes["safe"],
+                "mode": "strict",
+                **(result.get("meta") or {})
+            },
         },
         "evaluation": {
             "mode": "strict",
