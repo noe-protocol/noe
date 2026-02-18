@@ -278,7 +278,7 @@ def compute_context_hashes(c_root, c_domain, c_local, c_safe):
 
 
 def build_certificate(c_root, c_domain, c_local, c_safe, decision_result):
-    now_iso = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
+    now_iso = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     
     # v1.0: Compute hash of C_safe (determinism anchor)
     c_safe_hash = hash_json(c_safe)
