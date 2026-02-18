@@ -1,4 +1,5 @@
 import json
+from dataclasses import dataclass
 import hashlib
 import traceback
 import copy
@@ -7,6 +8,8 @@ import threading  # Thread safety for AST cache
 from typing import Dict, Any
 from collections import ChainMap, OrderedDict
 from collections.abc import Mapping
+from arpeggio import ParserPython, PTNodeVisitor, visit_parse_tree, ZeroOrMore, Optional, EOF
+from arpeggio import RegExMatch as _
 # Note: Import loop resolution.
 # noe_validator imports pi_safe (context_projection)
 # context_projection imports nothing from here.
@@ -19,11 +22,9 @@ from .noe_validator import (
     check_grounding,
     validate_ast_safety
 )
-from .canonical import canonical_literal_key
-from .context_manager import ContextManager
-from arpeggio import Optional, ZeroOrMore, OneOrMore, EOF, ParserPython, PTNodeVisitor, visit_parse_tree
-from arpeggio import RegExMatch as _
 from .context_requirements import CONTEXT_REQUIREMENTS
+from .provenance import compute_action_hash, OUTCOME_FIELDS
+from .canonical import canonical_json, canonical_literal_key
 
 # ==========================================
 # PERFORMANCE: AST CACHING
@@ -227,107 +228,8 @@ KNOWN_GLYPHS = set(GLYPH_MAP.keys())
 
 # v1.0 Outcome Fields (Complete Allow-List)
 # These fields affect event_hash but NOT action_hash
-OUTCOME_FIELDS = {
-    "status",
-    "verified",
-    "audit_status",
-    "expires_at_ms",
-    "observed_at_ms"
-}
-
-def _normalize_action(obj):
-    """
-    Recursively normalize an action object for deterministic hashing.
-
-    Normalization Rules:
-      - Dicts: Remove internal keys ('_' prefix, 'hash', 'meta'), sort keys, recurse.
-      - Lists/Tuples: Normalize each element.
-      - Primitives: Return as-is.
-      
-    Exclude context-derived outcome fields (status, verified, expires_at) from action hash
-    to ensure action_hash represents the PROPOSAL only, not the execution outcome.
-    """
-    # Dict case
-    if isinstance(obj, dict):
-        normalized = {}
-        # CRITICAL: Exclude both static metadata AND context-derived outcome fields
-        # UNLESS explicitly requested (e.g. for event/observation hashing)
-        # Default behavior (proposal identity) excludes status/verified
-        
-        # Base exclusion list (child_action_hash is INCLUDED for pointer semantics)
-        EXCLUDED_KEYS = {
-            "hash", "meta",                              # Static metadata
-            "action_hash",                              # Self-reference
-            "provenance",                                # Provenance data (contains self-hash)
-            "child_event_hash", "event_hash"            # Event hashes
-        }
-        
-        # Pointer Semantics (v1.0 Safety Kernel):
-        # If child_action_hash is present (e.g. noq), use it for identity
-        # and EXCLUDE the full 'target' dict to ensure O(1) hashing from the parent's perspective
-        # and stability against nested outcome changes.
-        if "child_action_hash" in obj:
-            EXCLUDED_KEYS.add("target")
-        
-        # If strict "proposal only" hashing is desired (default for action_hash),
-        # exclude mutable outcome fields.
-        # If computing "event hash", include them.
-        include_outcome = obj.get("_include_outcome_in_hash", False)
-        
-        # Use global OUTCOME_FIELDS for v1.0 allow-list
-        if not include_outcome:
-            for field in OUTCOME_FIELDS:
-                EXCLUDED_KEYS.add(field)
-            
-        for k in sorted(obj.keys()):
-            # Skip internal / outcome keys
-            if isinstance(k, str) and (k.startswith("_") or k in EXCLUDED_KEYS):
-                continue
-            normalized[k] = _normalize_action(obj[k])
-        return normalized
-
-    # List/Tuple case
-    if isinstance(obj, (list, tuple)):
-        return [_normalize_action(x) for x in obj]
-
-    # Primitives
-    return obj
-
-
-def compute_action_hash(action_obj):
-    """
-    Compute a deterministic SHA-256 hash for an action object.
-
-    The hash depends only on the normalized action structure and nested targets,
-    independent of evaluation mode or context hash.
-    
-    Side Effect:
-      - Recursively computes and sets 'action_hash' on nested action targets.
-      - Sets 'child_action_hash' on the parent action.
-    """
-    if not isinstance(action_obj, dict) or action_obj.get("type") != "action":
-        raise ValueError("compute_action_hash expects an action object.")
-    
-    # Handle nested action targets
-    target = action_obj.get("target")
-    if isinstance(target, dict) and target.get("type") == "action":
-        # Recursively compute hash for child action if missing
-        if "action_hash" not in target:
-            child_hash = compute_action_hash(target)
-            target["action_hash"] = child_hash
-        # Set child_action_hash on parent
-        action_obj["child_action_hash"] = target.get("action_hash")
-    
-    # Normalize and hash
-    normalized = _normalize_action(action_obj)
-    payload = json.dumps(
-        normalized,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    ).encode("utf-8")
-
-    return hashlib.sha256(payload).hexdigest()
+# OUTCOME_FIELDS and action hashing logic moved to noe.provenance
+# for Single Source of Truth
 
 
 # ==========================================
@@ -527,12 +429,7 @@ def compute_question_hash(
         payload["to"] = to
     
     # Canonical JSON: sorted keys, no whitespace, UTF-8
-    payload_json = json.dumps(
-        payload,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    ).encode("utf-8")
+    payload_json = canonical_json(payload).encode("utf-8")
     
     return hashlib.sha256(payload_json).hexdigest()
 
@@ -578,12 +475,7 @@ def compute_answer_hash(parent_question_hash, answer_payload, context_hash, time
         payload["answerer_id"] = answerer_id
     
     # Canonical JSON: sorted keys, no whitespace, UTF-8
-    payload_json = json.dumps(
-        payload,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    ).encode("utf-8")
+    payload_json = canonical_json(payload).encode("utf-8")
     
     return hashlib.sha256(payload_json).hexdigest()
 
@@ -790,6 +682,53 @@ def wrap_domain(value):
 
     # Structural or future domains
     return {"domain": "structural", "value": value}
+
+# ==========================================
+# 4. CONTEXT MANAGEMENT
+# ==========================================
+
+@dataclass
+class ContextSnapshot:
+    """Snapshot of a context state with Merkle hashes."""
+    structured: Dict[str, Any]
+    root_hash: str
+    domain_hash: str
+    local_hash: str
+    context_hash: str
+
+
+class ContextManager:
+    """
+    Manages structured context layers (root, domain, local) for Noe evaluation.
+    Computes cryptographic snapshots for provenance.
+    """
+    def __init__(self, root: Dict[str, Any], domain: Dict[str, Any], local: Dict[str, Any]):
+        self.root = root or {}
+        self.domain = domain or {}
+        self.local = local or {}
+
+    def snapshot(self) -> ContextSnapshot:
+        """
+        Create a cryptographic snapshot of the current context state.
+        Computes hashes for all layers and the total context.
+        """
+        # Construct the structured dictionary
+        structured = {
+            "root": self.root,
+            "domain": self.domain,
+            "local": self.local
+        }
+        
+        # Compute hashes using validator logic (Single Source of Truth)
+        hashes = compute_context_hashes(structured)
+        
+        return ContextSnapshot(
+            structured=structured,
+            root_hash=hashes["root"],
+            domain_hash=hashes["domain"],
+            local_hash=hashes["local"],
+            context_hash=hashes["total"]
+        )
 
 # ==========================================
 # 5. SEMANTIC EVALUATOR (NIP-005 + numeric slice of NIP-007)
