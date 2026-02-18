@@ -45,35 +45,16 @@ from typing import Any, Dict, Tuple
 
 # Adjust import to your project layout
 from noe.noe_parser import run_noe_logic
+from noe.provenance import compute_action_hash
+from noe.canonical import canonical_json
 
 
 # ---------------------------------------------------------------------------
 # Helpers: canonical JSON + hashing
 # ---------------------------------------------------------------------------
 
-def canonical_json(obj: Any) -> bytes:
-    """Canonical JSON encoding (RFC 8785 style-ish) for deterministic hashing."""
-    return json.dumps(
-        obj,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False,
-    ).encode("utf-8")
-
-
 def hash_json(obj: Any) -> str:
-    return hashlib.sha256(canonical_json(obj)).hexdigest()
-
-
-def compute_action_hash(result: Dict[str, Any]) -> str:
-    """
-    Compute an action hash compatible with NIP-010.
-    """
-    payload = {
-        "domain": result.get("domain"),
-        "value": result.get("value"),
-    }
-    return hash_json(payload)
+    return hashlib.sha256(canonical_json(obj).encode("utf-8")).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -451,7 +432,21 @@ def build_certificate(scenario_name: str,
     }
 
     if result_contains_action(result):
-        cert["outcome"]["action_hash"] = compute_action_hash(result)
+        # Extract the action object to hash (standard NIP-010 behavior)
+        action_obj = None
+        domain = result.get("domain")
+        value = result.get("value")
+        
+        if domain == "action" and isinstance(value, dict):
+            action_obj = value
+        elif domain == "list" and isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict) and item.get("type") == "action":
+                    action_obj = item
+                    break
+                    
+        if action_obj:
+            cert["outcome"]["action_hash"] = compute_action_hash(action_obj)
 
     return cert
 
