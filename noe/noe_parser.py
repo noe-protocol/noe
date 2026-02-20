@@ -24,7 +24,7 @@ from .noe_validator import (
 )
 from .context_requirements import CONTEXT_REQUIREMENTS
 from .provenance import compute_action_hash, OUTCOME_FIELDS
-from .canonical import canonical_json, canonical_literal_key
+from .canonical import canonical_json, canonical_literal_key, canonical_bytes
 
 # ==========================================
 # PERFORMANCE: AST CACHING
@@ -412,26 +412,19 @@ def compute_question_hash(
     else:
         raise TypeError(f"Timestamp must be int/float/str, got {type(timestamp)}")
     
-    payload = {
-        "kind": "Q",
-        "chain": canonical_chain,
-        "context_hash": context_hash,
-        "timestamp_ms": timestamp_ms,  # Integer, not str(float)
-    }
+    # CHANGED: Use JSON structure instead of raw concatenation
+    payload_list = [
+        "noe.question.v1",
+        canonical_chain,
+        context_hash,
+        timestamp_ms
+    ]
+    if question_type: payload_list.append(question_type)
+    if audience: payload_list.append(audience)
+    if to: payload_list.append(to)
     
-    if question_type is not None:
-        payload["question_type"] = question_type
-    if audience is not None:
-        # "broadcast" | "unicast" | other policy labels
-        payload["audience"] = audience
-    if to is not None:
-        # logical ID of target agent/sensor, e.g. "agent_42", "sensor_temp_1"
-        payload["to"] = to
-    
-    # Canonical JSON: sorted keys, no whitespace, UTF-8
-    payload_json = canonical_json(payload).encode("utf-8")
-    
-    return hashlib.sha256(payload_json).hexdigest()
+    payload = canonical_bytes(payload_list)
+    return hashlib.sha256(payload).hexdigest()
 
 
 def compute_answer_hash(parent_question_hash, answer_payload, context_hash, timestamp, answerer_id=None):
@@ -463,21 +456,19 @@ def compute_answer_hash(parent_question_hash, answer_payload, context_hash, time
     else:
         raise TypeError(f"Timestamp must be int/float/str, got {type(timestamp)}")
     
-    payload = {
-        "kind": "A",
-        "parent_question_hash": parent_question_hash,
-        "answer_payload": answer_payload,
-        "context_hash": context_hash,
-        "timestamp_ms": timestamp_ms,  # Integer milliseconds, not str(timestamp)
-    }
     
-    if answerer_id:
-        payload["answerer_id"] = answerer_id
     
-    # Canonical JSON: sorted keys, no whitespace, UTF-8
-    payload_json = canonical_json(payload).encode("utf-8")
-    
-    return hashlib.sha256(payload_json).hexdigest()
+    payload_list = [
+        "noe.answer.v1",
+        parent_question_hash,
+        answer_payload,
+        context_hash,
+        timestamp_ms
+    ]
+    if answerer_id: payload_list.append(answerer_id)
+        
+    payload = canonical_bytes(payload_list)
+    return hashlib.sha256(payload).hexdigest()
 
 
 
