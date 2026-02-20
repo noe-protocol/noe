@@ -16,7 +16,6 @@ class TestParserConcurrency(unittest.TestCase):
     
     def test_concurrent_parsing(self):
         now_us = time.time_ns() // 1_000
-        
         ctx = {
             "literals": {
                 "@agent": {"value": True, "timestamp_us": now_us},
@@ -26,7 +25,8 @@ class TestParserConcurrency(unittest.TestCase):
             "temporal": {"now_us": now_us},
             "axioms": {},
             "delivery": {"status": "ready"},
-            "audit": {"enabled": True}
+            "audit": {"enabled": True},
+            "spatial": {"thresholds": {"near": 1.0, "far": 10.0}, "orientation": {}}
         }
         
         # Use proper guard syntax: shi @agent khi sek mek @target sek nek
