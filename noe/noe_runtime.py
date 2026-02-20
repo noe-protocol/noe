@@ -286,6 +286,15 @@ class NoeRuntime:
                 prelim = self._error("ERR_CONTEXT_STALE", snap)
                 prelim.canonical_chain = chain
                 return self._apply_safety_handler(chain, snap, prelim)
+                
+            # Strict mode structural validation
+            if self.strict_mode:
+                from .noe_validator import validate_context_strict
+                is_valid, err_msg = validate_context_strict(snap.structured)
+                if not is_valid:
+                    prelim = self._error(f"ERR_BAD_CONTEXT", snap, canonical_chain=chain)
+                    prelim.value = err_msg
+                    return self._apply_safety_handler(chain, snap, prelim)
             
             # 3. Parse (Moved up for AST validation)
             try:
@@ -371,6 +380,10 @@ class NoeRuntime:
                 if isinstance(result, dict) and "domain" in result:
                     domain = result["domain"]
                     value = result["value"]
+                    if domain == "error":
+                        code = result.get("code", "ERR_EVAL")
+                        prelim = self._error(f"{code}: {value}", snap, canonical_chain=chain)
+                        return self._apply_safety_handler(chain, snap, prelim)
                 else:
                     from .noe_parser import wrap_domain
                     wrapped = wrap_domain(result)
