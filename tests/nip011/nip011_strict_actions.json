@@ -103,7 +103,7 @@
             "value": {
                 "type": "action",
                 "verb": "mek",
-                "target": "target_obj"
+                "target": "@valid_target"
             }
         }
     }
