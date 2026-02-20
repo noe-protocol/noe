@@ -62,7 +62,7 @@
             "value": {
                 "type": "action",
                 "verb": "men",
-                "target": "action",
+                "target": "@action",
                 "kind": "audit"
             }
         }
