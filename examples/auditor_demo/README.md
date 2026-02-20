@@ -9,7 +9,9 @@
 | NIP-010 | Provenance Certificates: schema and replay rules for execution evidence |
 | NIP-015 | Strict Mode: deterministic evaluation constraints and error semantics |
 
-**Status / Commit:** This README describes the behavior of the reference evaluator as of commit `d0bc1a9`. If behavior differs in your local checkout, treat the code as authoritative.
+> **Status / Commit:** This README describes the behavior of the reference evaluator as of commit `d0bc1a9`. If behavior differs in your local checkout, treat the code as authoritative.
+
+<br />
 
 This demo demonstrates how Noe provides **hash-committed execution certificates** to resolve the liability bottleneck in autonomous systems. Noe implements a deterministic provenance format for autonomous decisions, providing an evidence trail intended to support admissibility in safety-critical domains.
 
@@ -42,7 +44,6 @@ examples/auditor_demo/
 +-- shipment_certificate_REFUSED.json      <-- Output: fail-stop certificate
 +-- shipment_certificate_epistemic.json    <-- Output: epistemic-gap certificate
 +-- hallucination_certificate_*.json       <-- Output: hallucination scenario certificates
-+-- cert_green.json / cert_yellow.json / cert_red.json  <-- Output: multi-agent certificates
 +-- ...
 ```
 
@@ -56,9 +57,7 @@ Given the same chain and `C_safe`, the outcome is identical across runs under th
 
 > **Portability caveat:** Bit-identical replay is only claimed for runtimes that match the reference canonicalization exactly (see NIP-011 conformance vectors). We do not claim cross-runtime or cross-library equivalence without passing those vectors.
 
-<br />
-
-### Determinism Preconditions
+#### Determinism Preconditions
 
 Bit-identical replay is not a free property. The following constraints make it true in the reference evaluator:
 
@@ -69,9 +68,7 @@ Bit-identical replay is not a free property. The following constraints make it t
 * **Pinned runtime:** The reference evaluator targets CPython 3.10+, and all hashed artifacts use `noe.canonical.canonical_json()` (sort keys, no `NaN`/`Inf`).
 * **Chain canonicalization:** The chain string is normalized via `canonicalize_chain()` (defined in `noe/canonical.py`): Unicode NFKC normalization, whitespace collapsed to single spaces, leading/trailing whitespace stripped. Certificates canonicalize the chain before hashing (via `noe.provenance`). Replay should evaluate the canonicalized chain (or use an evaluator that canonicalizes internally).
 
-<br />
-
-### Canonicalization: Unified Implementation
+#### Canonicalization: Unified Implementation
 
 The reference auditor demo and provenance layer use a **single source of truth** for JSON canonicalization: `noe.canonical.canonical_json()`.
 
@@ -82,6 +79,15 @@ The reference auditor demo and provenance layer use a **single source of truth**
 | Returns | `str` | Standardized string format before encoding to bytes for hashing. |
 
 This ensures that context hashes are bit-identical for certificates emitted by the auditor demo and any component that uses `noe.canonical.canonical_json()`.
+
+#### Determinism Contract (noe-canonical-v1)
+
+The following invariants are enforced by the reference implementation and MUST hold for any conforming runtime:
+
+1. **Float ban in provenance paths:** `canonical_bytes()` (used for action/decision/provenance hashing) rejects `float` values. All numeric fields in hash-bearing payloads MUST be integers (e.g., `int64` microsecond timestamps, millicelsius). Context hashing via `canonical_json()` permits floats (e.g., epistemic `certainty` scores) since those are evaluation inputs, not determinism-critical outputs.
+2. **Hash versioning:** Certificates include `hashing.action_hash_version` (`"v2"` for current). The legacy `compute_action_hash_v1()` (using `ensure_ascii=False`) is preserved in `noe/provenance.py` for backward compatibility with older artifacts.
+3. **Action list hashing:** Each action in a `sek...sek` list is hashed independently. The list domain result does NOT produce a single aggregate hash; each element carries its own `action_hash`.
+4. **Certificate `decision` snippet:** Every certificate includes a machine-checkable `decision` block: `{"guard": "khi", "required_knowledge": [...], "inputs_knowledge_present": [...], "satisfied": bool}`.
 
 <br />
 
@@ -304,6 +310,8 @@ The following schema is from `shipment_certificate_strict.json` (Demo 1). Other 
 }
 ```
 
+<br />
+
 ### Field Reference
 
 | Field | Source | Notes |
@@ -320,6 +328,8 @@ The following schema is from `shipment_certificate_strict.json` (Demo 1). Other 
 ### Non-Execution Paths
 
 When evaluation yields `domain: "undefined"` or `domain: "error"`, the `build_provenance_record()` function in `noe/provenance.py` sets `action_hash = None`.
+
+<br />
 
 ### The Auditor's Checklist
 
