@@ -180,7 +180,9 @@ def compute_action_hash(action_obj: Dict[str, Any]) -> str:
     # Normalize and hash
     normalized = _normalize_action(action_obj)
     
-    # Use canonical_bytes (noe-canonical-v1 with float ban)
+    # Hard float fail: normative hash inputs MUST be float-free.
+    # If this raises, it's a bug in the adapter/grounding layer,
+    # not something hashing should fix.
     payload = canonical_bytes(normalized)
 
     return hashlib.sha256(payload).hexdigest()
