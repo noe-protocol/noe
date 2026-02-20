@@ -11,10 +11,10 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from noe.noe_parser import run_noe_logic
 from noe.provenance import compute_action_hash
-from noe.canonical import canonical_json
+from noe.canonical import canonical_json, canonical_bytes
 
 def hash_json(obj):
-    return hashlib.sha256(canonical_json(obj).encode("utf-8")).hexdigest()
+    return hashlib.sha256(canonical_bytes(obj)).hexdigest()
 
 
 def compute_context_hashes(c_root, c_domain, c_local, c_safe):
@@ -78,10 +78,25 @@ def build_certificate(
                 "mode": "lenient"
             }
         },
+        "decision": {
+            "guard": "khi",
+            "required_knowledge": [
+                "@propose_clear_a",
+                "@agree_clear_b",
+                "@veto_b"
+            ],
+            "inputs_knowledge_present": list(c_safe.get("modal", {}).get("knowledge", {}).keys()),
+            "satisfied": True if result.get("domain") in ("action", "list") else False
+        },
         "evaluation": {
             "mode": "lenient", # Multi-agent uses lenient
             "runtime": "python-reference",
             "nip": ["NIP-005", "NIP-009", "NIP-010", "NIP-014"]
+        },
+        "hashing": {
+            "canonicalization": "noe-canonical-v1",
+            "hash": "sha256",
+            "action_hash_version": "v2"
         },
         "signatures": { "validator_signature": "simulated_rsa_sign(action_hash)" }
     }
@@ -159,7 +174,7 @@ def find_targets(result_val, result_domain=None):
 
 def build_root_context(now_s: float):
     return {
-        "temporal": { "max_skew_ms": 5000, "now": now_s, "timestamp": now_s },
+        "temporal": { "max_skew_ms": 5000, "now": now_s, "timestamp": now_s, "clock": "epoch_us" },
         "constants": { "min_confidence": { "knowledge": 0.90, "belief": 0.40 } },
         "audit": { "files": { "@session_safety_log": "verified" } },
         "delivery": { "status": { "@propose_clear_a": "pending" } },
@@ -176,7 +191,7 @@ def build_context_A(clear: bool, now_s: float):
             "@propose_clear_a": { "value": "PROPOSE_CLEAR_A", "type": "proposal" },
             "@session_safety_log": { "value": "LOG", "type": "log" }
         },
-        "temporal": { "now": now_s, "timestamp": now_s, "max_skew_ms": 5000 },
+        "temporal": { "now": now_s, "timestamp": now_s, "max_skew_ms": 5000, "clock": "epoch_us" },
         "modal": { "knowledge": {}, "belief": {}, "certainty": {} }
     }
 
@@ -198,7 +213,7 @@ def build_context_B(clear_confidence: float, proposal_received: bool, now_s: flo
     
     ctx = {
         "literals": literals,
-        "temporal": { "now": now_s, "timestamp": now_s, "max_skew_ms": 5000 },
+        "temporal": { "now": now_s, "timestamp": now_s, "max_skew_ms": 5000, "clock": "epoch_us" },
         "modal": { "knowledge": {}, "belief": {}, "certainty": {} }
     }
     
@@ -227,7 +242,7 @@ def build_context_Arb(prop_A: bool, agree_B: bool, veto_B: bool, now_s: float):
             "@agree_clear_b": { "value": True, "type": "message" },
             "@veto_b": { "value": True, "type": "message" },
         },
-        "temporal": { "now": now_s, "timestamp": now_s, "max_skew_ms": 5000 },
+        "temporal": { "now": now_s, "timestamp": now_s, "max_skew_ms": 5000, "clock": "epoch_us" },
         "modal": { "knowledge": knowledge, "belief": {}, "certainty": {} }
     }
 
@@ -251,6 +266,15 @@ def project_safe(c_merged):
     v1.0 Update: Inline epistemic projection (project_epistemic removed from API).
     """
     safe = deepcopy(c_merged)
+    
+    # Make derived temporal variables explicitly visible
+    if "temporal" not in safe:
+        safe["temporal"] = {}
+    safe["temporal"]["derived"] = {
+        "max_literal_age_us": int(safe.get("temporal", {}).get("max_skew_ms", 5000) * 1000),
+        "skew_us": 0
+    }
+    
     literals = safe.get("literals", {})
     
     # 1. Hardware Signature Verification (Anti-Gaming)
