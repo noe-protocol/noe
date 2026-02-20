@@ -2,7 +2,7 @@
 
 > **Key insight:** Noe doesn't do grounding. YOU do. Noe validates what you've grounded.
 
----
+<br />
 
 ## The Flow
 
@@ -10,7 +10,7 @@
 Sensor Value → Your Grounding Logic → Epistemic Set → Noe Evaluation
 ```
 
----
+<br />
 
 ## Step-by-Step Example
 
@@ -18,9 +18,9 @@ Sensor Value → Your Grounding Logic → Epistemic Set → Noe Evaluation
 
 ```python
 lidar_reading = {
-    "min_distance_m": 0.8,
+    "min_distance_mm": 800,  # Integers used for hashing determinism
     "confidence": 0.75,      # Noisy conditions
-    "timestamp_us": 1768792000000000
+    "timestamp_us": 1768792000000000 # Epoch or monotonic µs as defined by your contract
 }
 ```
 
@@ -32,15 +32,15 @@ KNOWLEDGE_THRESHOLD = 0.90
 BELIEF_THRESHOLD = 0.40
 
 # Derive predicate value
-path_clear = lidar_reading["min_distance_m"] > 0.5  # True
+path_clear = lidar_reading["min_distance_mm"] > 500  # True
 
 # Decide epistemic status
 if lidar_reading["confidence"] >= KNOWLEDGE_THRESHOLD:
     # High confidence → Knowledge
-    context["modal"]["knowledge"]["@path_clear"] = path_clear
+    local_context["modal"]["knowledge"]["@path_clear"] = path_clear
 elif lidar_reading["confidence"] >= BELIEF_THRESHOLD:
     # Medium confidence → Belief only
-    context["modal"]["belief"]["@path_clear"] = path_clear
+    local_context["modal"]["belief"]["@path_clear"] = path_clear
 else:
     # Low confidence → Neither (absent from both)
     pass
@@ -48,12 +48,12 @@ else:
 
 ### 3. Context State
 
-With confidence = 0.75:
+With confidence = 0.75, the effective context passed to the evaluator (`C_safe`) takes this shape:
 
 ```python
-context = {
+c_safe = {
     "literals": {
-        "@path_clear": {"value": True, "timestamp_us": 1768792000000000}
+        "@path_clear": {"type": "boolean"}
     },
     "modal": {
         "knowledge": {},                    # Empty! (0.75 < 0.90)
@@ -67,36 +67,37 @@ context = {
 
 ```python
 chain = "shi @path_clear khi sek mek @navigate sek nek"
-result = run_noe_logic(chain, context, mode="strict")
+result = run_noe_logic(chain, c_safe, mode="strict")
 ```
 
 **What happens:**
 - `shi @path_clear` checks `modal.knowledge["@path_clear"]`
-- Not found → returns `undefined`
-- `undefined khi ...` → whole chain returns `undefined`
-- `domain: undefined` → **non-execution**
+- Not found → strict mode yields `ERR_EPISTEMIC_MISMATCH`
+- `domain: error` → **non-execution**
 
 ### 5. Result
 
 ```python
 result = {
-    "domain": "undefined",
-    "value": "undefined"
+    "domain": "error",
+    "code": "ERR_EPISTEMIC_MISMATCH"
 }
-# Action NOT emitted. Robot halts safely.
+# No navigation action emitted; supervisor layer keeps current mode / safe fallback.
 ```
 
----
+<br />
 
 ## Three Outcomes
 
 | Confidence | Epistemic Set | shi Result | Chain Result | Action |
 |------------|---------------|------------|--------------|--------|
-| ≥ 0.90 | knowledge | `true` | `list[action]` | ✅ Executed |
-| 0.40 - 0.89 | belief only | `undefined` | `undefined` | ❌ Blocked |
-| < 0.40 | neither | `undefined` | `undefined` | ❌ Blocked |
+| ≥ 0.90 | knowledge | `true` | `list[action]` | ✅ Emitted |
+| 0.40 - 0.89 | belief only | error | `ERR_EPISTEMIC_MISMATCH` | ❌ Blocked |
+| < 0.40 | neither | error | `ERR_EPISTEMIC_MISMATCH` | ❌ Blocked |
 
----
+This is an illustrative grounding policy: strict shi (knowledge) accepts only membership in modal.knowledge; hysteresis/adapters may promote or retain membership across ticks based on stability rules
+
+<br />
 
 ## Why This Matters
 
@@ -111,7 +112,7 @@ result = {
 - Whether predicate was in knowledge/belief/neither
 - Exactly why the action was blocked
 
----
+<br />
 
 ## Common Pattern
 
