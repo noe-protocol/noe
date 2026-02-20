@@ -14,7 +14,7 @@ from noe.provenance import compute_action_hash
 from noe.canonical import canonical_json, canonical_bytes
 
 def hash_json(obj):
-    return hashlib.sha256(canonical_bytes(obj)).hexdigest()
+    return hashlib.sha256(canonical_json(obj).encode("utf-8")).hexdigest()
 
 
 def compute_context_hashes(c_root, c_domain, c_local, c_safe):
@@ -124,26 +124,29 @@ CHAIN_B_VETO = (
     "sek mek @veto_b sek nek"
 )
 
-# Arbitrator: 3-Tier Liveness Logic
-CHAIN_ARB = (
-    # TIER 1: GREEN (High Speed)
-    # Unanimous Consensus: A Proposes + B Agrees
-    "shi @propose_clear_a an shi @agree_clear_b khi sek mek @enable_high_speed sek "
-    "shi @propose_clear_a an nai shi @agree_clear_b an nai shi @veto_b khi sek mek @enable_creep_speed mek @emit_warning_signal sek "
-    "shi @veto_b khi sek mek @safe_stop men @request_human_supervisor sek "
-    "nek"
-)
+# Arbitrator: 3-Tier Liveness Logic (separate chains, first-match priority)
+# Action targets are control_point literals (integer-clean).
+# Hash commits to symbolic ref; resolved blob is observational.
+
+# TIER 1: GREEN — Unanimous Consensus: A Proposes + B Agrees
+CHAIN_ARB_GREEN = "shi @propose_clear_a an shi @agree_clear_b khi sek mek @cmd_go sek nek"
+
+# TIER 2: YELLOW — A proposes, B neither agrees nor vetoes
+CHAIN_ARB_YELLOW = "shi @propose_clear_a an nai shi @agree_clear_b an nai shi @veto_b khi sek mek @cmd_slow mek @cmd_beep sek nek"
+
+# TIER 3: RED — B vetoes
+CHAIN_ARB_RED = "shi @veto_b khi sek mek @cmd_halt men @cmd_callhq sek nek"
 
 # ---------------------------------------------------------------------------
 # HELPERS
 # ---------------------------------------------------------------------------
 
-def get_timestamp(): return time.time()
+def get_timestamp(): return time.time_ns() // 1_000
 
-def build_sensor_literal(val, conf, source, now_s):
+def build_sensor_literal(val, conf_milli, source, now_us):
     # HARDENING: Add mock signature to prove where the check happens
-    sig = f"sig_rsa_sha256_{hashlib.sha256(str(now_s).encode()).hexdigest()[:8]}"
-    return { "value": val, "confidence": conf, "timestamp": now_s, "source": source, "signature": sig }
+    sig = f"sig_rsa_sha256_{hashlib.sha256(str(now_us).encode()).hexdigest()[:8]}"
+    return { "value": val, "confidence_milli": conf_milli, "timestamp_us": now_us, "source": source, "signature": sig }
 
 # Strict Execution Gate (v1.0-rc): Only execute if domain is action or list of actions.
 def find_targets(result_val, result_domain=None):
@@ -156,12 +159,15 @@ def find_targets(result_val, result_domain=None):
         
     if isinstance(result_val, list):
         for item in result_val:
-            # Recursive calls might not pass domain, but the top-level gate handles the main check.
             found.extend(find_targets(item))
     elif isinstance(result_val, dict):
-        # Case 1: Raw Action Object (from 'list' domain)
-        if result_val.get("type") == "action" and isinstance(result_val.get("target"), dict):
-            found.append(result_val["target"].get("value"))
+        # Case 1: Raw Action Object — target is now a symbolic string ref
+        if result_val.get("type") == "action":
+            target = result_val.get("target")
+            if isinstance(target, str):
+                found.append(target)  # e.g., "@enable_high_speed"
+            elif isinstance(target, dict):
+                found.append(target.get("value"))
         # Case 2: Domain Object wrapping action (single action domain)
         if result_val.get("domain") == "action" and "value" in result_val:
              if isinstance(result_val["value"], dict):
@@ -172,48 +178,49 @@ def find_targets(result_val, result_domain=None):
 # CONTEXT BUILDERS
 # ---------------------------------------------------------------------------
 
-def build_root_context(now_s: float):
+def build_root_context(now_us: int):
     return {
-        "temporal": { "max_skew_ms": 5000, "now": now_s, "timestamp": now_s, "clock": "epoch_us" },
-        "constants": { "min_confidence": { "knowledge": 0.90, "belief": 0.40 } },
+        "units": { "probability": "milliprob", "time": "microseconds" },
+        "temporal": { "max_skew_ms": 5000, "now": now_us, "timestamp": now_us, "clock": "epoch_us" },
+        "constants": { "min_confidence_milli": { "knowledge": 900, "belief": 400 } },
         "audit": { "files": { "@session_safety_log": "verified" } },
         "delivery": { "status": { "@propose_clear_a": "pending" } },
-        "spatial": { "thresholds": {"near": 1.0, "far": 10.0}, "regions": {}, "orientation": {"target":0, "tolerance":0.1} },
+        "spatial": { "thresholds": {"near": 1000, "far": 10000}, "regions": {}, "orientation": {"target":0, "tolerance":100} },
         "axioms": { "value_system": {} },
         "rel": {},
         "demonstratives": { "proximal": {}, "distal": {} }
     }
 
-def build_context_A(clear: bool, now_s: float):
+def build_context_A(clear: bool, now_us: int):
     return {
         "literals": {
-            "@human_clear_a": build_sensor_literal(clear, 0.99 if clear else 0.1, "mob_a_fusion", now_s),
+            "@human_clear_a": build_sensor_literal(clear, 990 if clear else 100, "mob_a_fusion", now_us),
             "@propose_clear_a": { "value": "PROPOSE_CLEAR_A", "type": "proposal" },
             "@session_safety_log": { "value": "LOG", "type": "log" }
         },
-        "temporal": { "now": now_s, "timestamp": now_s, "max_skew_ms": 5000, "clock": "epoch_us" },
+        "temporal": { "now": now_us, "timestamp": now_us, "max_skew_ms": 5000, "clock": "epoch_us" },
         "modal": { "knowledge": {}, "belief": {}, "certainty": {} }
     }
 
-def build_context_B(clear_confidence: float, proposal_received: bool, now_s: float):
-    # Robot B Logic:
-    # If confidence > 0.90 -> Knows Clear -> Agree
-    # If confidence < 0.10 (implied human) -> Knows Detected -> Veto
-    # If confidence 0.40..0.80 -> Uncertain -> Silence (No Agree, No Veto)
+def build_context_B(clear_confidence_milli: int, proposal_received: bool, now_us: int):
+    # Robot B Logic (milliprob thresholds):
+    # If confidence >= 900 -> Knows Clear -> Agree
+    # If confidence < 100 (implied human) -> Knows Detected -> Veto
+    # If confidence 400..800 -> Uncertain -> Silence (No Agree, No Veto)
     
     literals = {
         "@propose_clear_a": { "value": "PROPOSE_CLEAR_A", "type": "proposal" },
         "@agree_clear_b": { "value": "AGREE_CLEAR_B", "type": "agreement" },
         "@veto_b": { "value": "VETO_B", "type": "veto" },
         # Sensors
-        "@human_clear_b": build_sensor_literal(True, clear_confidence, "stat_b_lidar", now_s),
+        "@human_clear_b": build_sensor_literal(True, clear_confidence_milli, "stat_b_lidar", now_us),
         # Inverse sensor for veto logic (if clear is low, detected is high)
-        "@human_detected_b": build_sensor_literal(True, 1.0 - clear_confidence, "stat_b_lidar", now_s)
+        "@human_detected_b": build_sensor_literal(True, 1000 - clear_confidence_milli, "stat_b_lidar", now_us)
     }
     
     ctx = {
         "literals": literals,
-        "temporal": { "now": now_s, "timestamp": now_s, "max_skew_ms": 5000, "clock": "epoch_us" },
+        "temporal": { "now": now_us, "timestamp": now_us, "max_skew_ms": 5000, "clock": "epoch_us" },
         "modal": { "knowledge": {}, "belief": {}, "certainty": {} }
     }
     
@@ -222,27 +229,56 @@ def build_context_B(clear_confidence: float, proposal_received: bool, now_s: flo
         
     return ctx
 
-def build_context_Arb(prop_A: bool, agree_B: bool, veto_B: bool, now_s: float):
+def build_context_Arb(prop_A: bool, agree_B: bool, veto_B: bool, now_us: int):
+    # Knowledge keys stored WITHOUT @ prefix — shi looks up via canonical_literal_key()
+    # which strips @. E.g., shi @propose_clear_a → looks up "propose_clear_a".
     knowledge = {
-        "@propose_clear_a": bool(prop_A),
-        "@agree_clear_b": bool(agree_B),
-        "@veto_b": bool(veto_B)
+        "propose_clear_a": bool(prop_A),
+        "agree_clear_b": bool(agree_B),
+        "veto_b": bool(veto_B)
     }
 
     return {
         "literals": {
-            # Actions
-            "@enable_high_speed": { "value": "SET_SPEED_1.5", "type": "control" },
-            "@enable_creep_speed": { "value": "SET_SPEED_0.1", "type": "control" },
-            "@emit_warning_signal": { "value": "BEEP_BEEP", "type": "alert" },
-            "@safe_stop": { "value": "STOP_IMMEDIATE", "type": "safety" },
-            "@request_human_supervisor": { "value": "CALL_HUMAN", "type": "alert" },
-            # Messages
-            "@propose_clear_a": { "value": True, "type": "message" }, 
-            "@agree_clear_b": { "value": True, "type": "message" },
-            "@veto_b": { "value": True, "type": "message" },
+            # Control Point Action Targets (integer-clean)
+            # Hash commits to symbolic ref (e.g., @cmd_go);
+            # resolved blob is observational, bound via context_hashes.
+            "@cmd_go": {
+                "value": "nav2_set_speed",
+                "type": "control_point",
+                "speed_mm_s": 1500,
+                "timestamp_us": now_us
+            },
+            "@cmd_slow": {
+                "value": "nav2_set_speed",
+                "type": "control_point",
+                "speed_mm_s": 100,
+                "timestamp_us": now_us
+            },
+            "@cmd_beep": {
+                "value": "speaker_emit",
+                "type": "control_point",
+                "pattern": "caution_beep",
+                "timestamp_us": now_us
+            },
+            "@cmd_halt": {
+                "value": "nav2_safe_stop",
+                "type": "control_point",
+                "decel_mm_s2": 3000,
+                "timestamp_us": now_us
+            },
+            "@cmd_callhq": {
+                "value": "comms_request_supervisor",
+                "type": "control_point",
+                "urgency": 900,
+                "timestamp_us": now_us
+            },
+            # Messages (epistemic inputs, not control points)
+            "@propose_clear_a": True,
+            "@agree_clear_b": True,
+            "@veto_b": True,
         },
-        "temporal": { "now": now_s, "timestamp": now_s, "max_skew_ms": 5000, "clock": "epoch_us" },
+        "temporal": { "now": now_us, "timestamp": now_us, "max_skew_ms": 5000, "clock": "epoch_us" },
         "modal": { "knowledge": knowledge, "belief": {}, "certainty": {} }
     }
 
@@ -303,17 +339,17 @@ def project_safe(c_merged):
     belief = dict(safe["modal"].get("belief", {}))  # Copy existing
     
     for k, v in valid_literals.items():
-        if isinstance(v, dict) and "confidence" in v:
-            conf = v.get("confidence", 0.0)
+        if isinstance(v, dict) and "confidence_milli" in v:
+            conf = v.get("confidence_milli", 0)
             val = v.get("value")
             
-            # Knowledge threshold: 0.90
-            if conf >= 0.90:
+            # Knowledge threshold: 900 milliprob (0.90)
+            if conf >= 900:
                 knowledge[k] = val
-            # Belief threshold: 0.40
-            elif conf >= 0.40:
+            # Belief threshold: 400 milliprob (0.40)
+            elif conf >= 400:
                 belief[k] = val
-            # Below 0.40: ignored (too uncertain)
+            # Below 400: ignored (too uncertain)
     
     # Update modal shard (merge, don't replace)
     safe["modal"]["knowledge"] = knowledge
@@ -342,14 +378,14 @@ def print_xray_trace(c_safe):
     k = c_safe["modal"]["knowledge"]
     
     # 1. Green Logic: shi @propose_clear_a an shi @agree_clear_b
-    has_prop = k.get("@propose_clear_a", False)
-    has_agree = k.get("@agree_clear_b", False)
+    has_prop = k.get("propose_clear_a", False)
+    has_agree = k.get("agree_clear_b", False)
     green_trig = has_prop and has_agree
     
     green_reason = "TRUE" if green_trig else f"FALSE (Missing: {'@agree_clear_b' if has_prop else '@propose_clear_a'})"
     
     # 2. Yellow Logic: shi @propose_clear_a an nai (shi @agree_clear_b) an nai (shi @veto_b)
-    has_veto = k.get("@veto_b", False)
+    has_veto = k.get("veto_b", False)
     # Note: nai(P) is true if P is NOT in Knowledge.
     yellow_trig = has_prop and (not has_agree) and (not has_veto)
     
@@ -370,52 +406,62 @@ def print_xray_trace(c_safe):
     print(f"[Noe Eval] Clause 3 (Red):    {red_reason}")
     print()
 
-def run_yellow_alert_demo(run_name, a_clear, b_confidence, out_filename):
-    print(f"\n--- RUN: {run_name} (B Conf: {b_confidence}) ---")
+def run_yellow_alert_demo(run_name, a_clear, b_confidence_milli, out_filename):
+    print(f"\n--- RUN: {run_name} (B Conf: {b_confidence_milli/1000:.2f}) ---")
     now = get_timestamp()
     
     # 1. Robot A
     c_root = build_root_context(now)
     c_safe_a = project_safe(merge_context(c_root, {}, build_context_A(a_clear, now)))
     res_a = run_noe_logic(CHAIN_A, c_safe_a, mode="lenient")
-    did_propose = "PROPOSE_CLEAR_A" in find_targets(res_a.get("value"), res_a.get("domain"))
+    # Targets are now symbolic refs like "@propose_clear_a"
+    did_propose = "@propose_clear_a" in find_targets(res_a.get("value"), res_a.get("domain"))
     print(f"[Robot A] Propose? {did_propose}")
     
     # 2. Robot B
-    c_safe_b = project_safe(merge_context(c_root, {}, build_context_B(b_confidence, did_propose, now)))
+    c_safe_b = project_safe(merge_context(c_root, {}, build_context_B(b_confidence_milli, did_propose, now)))
     
     # B Check Agreement
     res_b_agree = run_noe_logic(CHAIN_B_AGREE, c_safe_b, mode="lenient")
-    did_agree = "AGREE_CLEAR_B" in find_targets(res_b_agree.get("value"), res_b_agree.get("domain"))
+    did_agree = "@agree_clear_b" in find_targets(res_b_agree.get("value"), res_b_agree.get("domain"))
     
     # B Check Veto
     res_b_veto = run_noe_logic(CHAIN_B_VETO, c_safe_b, mode="lenient")
-    did_veto = "VETO_B" in find_targets(res_b_veto.get("value"), res_b_veto.get("domain"))
+    did_veto = "@veto_b" in find_targets(res_b_veto.get("value"), res_b_veto.get("domain"))
     
     print(f"[Robot B] Agree? {did_agree} | Veto? {did_veto}")
     
-    # 3. Arbitrator
+    # 3. Arbitrator — evaluate tiers with first-match priority
     c_local_arb = build_context_Arb(did_propose, did_agree, did_veto, now)
     c_safe_arb = merge_context(c_root, {}, c_local_arb)
     
     # [VISUALIZATION] X-Ray Trace
     print_xray_trace(c_safe_arb)
     
-    res_arb = run_noe_logic(CHAIN_ARB, c_safe_arb, mode="strict")
+    # Evaluate each tier independently; first match wins
+    tier = "IDLE (No Action)"
+    res_arb = None
+    active_chain = CHAIN_ARB_GREEN
     
-    outcomes = find_targets(res_arb.get("value"), res_arb.get("domain"))
-    print(f"[Arbitrator] Outcome Actions: {outcomes}")
+    for chain_name, chain in [("GREEN", CHAIN_ARB_GREEN), ("YELLOW", CHAIN_ARB_YELLOW), ("RED", CHAIN_ARB_RED)]:
+        res = run_noe_logic(chain, c_safe_arb, mode="lenient")
+        targets = find_targets(res.get("value"), res.get("domain"))
+        if targets:
+            if chain_name == "GREEN": tier = "GREEN (High Speed)"
+            elif chain_name == "YELLOW": tier = "YELLOW (Creep Mode)"
+            elif chain_name == "RED": tier = "RED (Safety Stop)"
+            res_arb = res
+            active_chain = chain
+            print(f"[Arbitrator] Outcome Actions: {targets}")
+            break
     
-    # Determine Tier
-    tier = "UNKNOWN"
-    if "SET_SPEED_1.5" in outcomes: tier = "GREEN (High Speed)"
-    elif "SET_SPEED_0.1" in outcomes: tier = "YELLOW (Creep Mode)"
-    elif "STOP_IMMEDIATE" in outcomes: tier = "RED (Safety Stop)"
-    else: tier = "IDLE (No Action)"
+    if res_arb is None:
+        res_arb = run_noe_logic(CHAIN_ARB_GREEN, c_safe_arb, mode="lenient")
+        print(f"[Arbitrator] Outcome Actions: []")
     
     print(f"✅ FINAL STATE: {tier}")
     
-    cert = build_certificate(f"arb_{run_name}", CHAIN_ARB, c_root, {}, c_local_arb, c_safe_arb, res_arb)
+    cert = build_certificate(f"arb_{run_name}", active_chain, c_root, {}, c_local_arb, c_safe_arb, res_arb)
     Path(__file__).parent.joinpath(out_filename).write_text(json.dumps(cert, indent=2))
     print(f"   Written to: {out_filename}")
     if cert.get("outcome") and cert["outcome"].get("action_hash"):
@@ -427,12 +473,12 @@ if __name__ == "__main__":
     print("========================================================================")
     
     # 1. GREEN: Unanimous
-    run_yellow_alert_demo("Green_State", True, 0.99, "cert_green.json")
+    run_yellow_alert_demo("Green_State", True, 990, "cert_green.json")
     
     # 2. YELLOW: Uncertainty (Graceful Degradation)
-    # A sees clear, B is unsure (0.60) -> No Agree, No Veto -> Creep
-    run_yellow_alert_demo("Yellow_State", True, 0.60, "cert_yellow.json")
+    # A sees clear, B is unsure (600 milliprob) -> No Agree, No Veto -> Creep
+    run_yellow_alert_demo("Yellow_State", True, 600, "cert_yellow.json")
     
     # 3. RED: Conflict (Safe Stop)
-    # A sees clear, B sees Human (Conf 0.05 on Clear -> 0.95 on Detected)
-    run_yellow_alert_demo("Red_State", True, 0.05, "cert_red.json")
+    # A sees clear, B sees Human (Conf 50 milliprob on Clear -> 950 on Detected)
+    run_yellow_alert_demo("Red_State", True, 50, "cert_red.json")
