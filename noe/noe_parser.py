@@ -1885,6 +1885,16 @@ class NoeEvaluator(PTNodeVisitor):
                     "value": f"Invalid target type {type(target).__name__} for verb '{verb}'",
                     "meta": {"verb": verb, "target": target}
                 }
+                
+            # 3. Grounding Requirements (v1.0 Missing Shard Check)
+            from .noe_validator import check_grounding
+            if not check_grounding(verb, tuple([target]), self.ctx):
+                return {
+                    "domain": "error",
+                    "code": "ERR_BAD_CONTEXT",
+                    "value": f"Context grounding validation failed for action '{verb}' against context schema.",
+                    "meta": {"verb": verb, "target": target}
+                }
 
         # ---------- 1. Action DAG (cycle safety) ----------
 
