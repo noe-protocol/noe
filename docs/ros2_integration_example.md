@@ -4,52 +4,52 @@
 
 This shows how Noe fits into a typical ROS 2 node as a **safety gate** between sensor data and actuator commands.
 
----
+<br />
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     ROS 2 Node                               │
+│                     ROS 2 Node                              │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
+│                                                             │
 │  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐     │
-│  │ /lidar/scan  │   │ /camera/rgb  │   │ /joint_state │     │
+│  │ /lidar/scan  │   │ /camera/rgb  │   │ /joint_states│     │
 │  └──────┬───────┘   └──────┬───────┘   └──────┬───────┘     │
-│         │                  │                  │              │
-│         ▼                  ▼                  ▼              │
+│         │                  │                  │             │
+│         ▼                  ▼                  ▼             │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │              Context Builder                         │    │
+│  │              Context Builder                        │    │
 │  │   Sensors → Grounding → Epistemic Sets → C_safe     │    │
 │  └─────────────────────────┬───────────────────────────┘    │
-│                            │                                 │
-│                            ▼                                 │
+│                            │                                │
+│                            ▼                                │
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │              Noe Safety Kernel                       │    │
+│  │              Noe Safety Kernel                      │    │
 │  │   run_noe_logic(chain, C_safe, mode="strict")       │    │
 │  └─────────────────────────┬───────────────────────────┘    │
-│                            │                                 │
+│                            │                                │
 │              ┌─────────────┴─────────────┐                  │
 │              ▼                           ▼                  │
 │     domain == "list"              domain != "list"          │
 │     (action allowed)              (non-execution)           │
 │              │                           │                  │
 │              ▼                           ▼                  │
-│  ┌──────────────────┐         ┌──────────────────┐         │
-│  │ /cmd_vel publish │         │ Safe halt + log  │         │
-│  └──────────────────┘         └──────────────────┘         │
-│                                                              │
+│  ┌──────────────────┐         ┌────────────────────┐        │
+│  │ /cmd_vel publish │         │ Adapter policy+log │        │
+│  └──────────────────┘         └────────────────────┘        │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 > [!IMPORTANT]
 > **Failure Walkthrough (Designed Refusal)**
 > 
-> LiDAR confidence drops to 0.75 → grounding layer rejects `@path_clear` from knowledge set (threshold: 0.90) → `shi @path_clear` resolves to `undefined` → Noe emits non-execution (`domain: undefined`) + provenance hash → deliberation layer triggers safe halt → reflex controller continues obstacle avoidance → audit log records: "Epistemic gap at T=1234567890, hash=abc123..."
+> LiDAR confidence drops to 0.75 → grounding layer rejects `@path_clear` from knowledge set (threshold: 0.90) → `shi @path_clear` resolves to `error` (`ERR_EPISTEMIC_MISMATCH`) in strict mode → Noe emits non-execution (`domain: error`) + provenance hash → supervisor applies configured fallback (hold/slow/stop) → reflex controller continues obstacle avoidance → audit log records: "Epistemic gap at T=1234567890, hash=abc123..."
 > 
 > **This refusal is designed, not accidental.** The provenance record proves exactly why the action was blocked and what context was trusted at that moment.
 
----
+<br />
 
 ## Pseudocode Implementation
 
@@ -67,7 +67,7 @@ from typing import Optional, Dict, Any
 
 # --- Simulated ROS 2 imports (pseudocode) ---
 # from rclpy.node import Node
-# from sensor_msgs.msg import LaserScan
+# from sensor_msgs.msg import LaserScan, BatteryState
 # from geometry_msgs.msg import Twist
 
 # --- Noe import (real) ---
@@ -124,6 +124,8 @@ class NoeGuardNode:  # (Node):  # Would inherit from rclpy.node.Node
     def lidar_callback(self, msg):
         """Process LiDAR scan, extract path_clear predicate."""
         # Your perception logic here
+        # (This is a toy heuristic - real systems fuse track stability,
+        # classifier confidence, and covariance, then apply hysteresis).
         min_distance = min(msg.ranges)
         path_clear = min_distance > 0.5  # meters
         confidence = 0.95 if min_distance > 1.0 else 0.70
@@ -153,6 +155,8 @@ class NoeGuardNode:  # (Node):  # Would inherit from rclpy.node.Node
         Convert sensor readings to Noe context.
         
         This is YOUR grounding layer - Noe doesn't do this.
+        Raw sensor payload stays in C_total.local.sensors;
+        C_safe carries only typed literals + epistemic membership.
         """
         now_us = self._now_us()
         
@@ -164,15 +168,14 @@ class NoeGuardNode:  # (Node):  # Would inherit from rclpy.node.Node
             # Skip stale readings
             age_us = now_us - reading.timestamp_us
             if age_us > self.MAX_STALENESS_US:
-                continue  # Will be absent from C_safe → ERR_LITERAL_MISSING
+                continue  # predicate absent from C_safe (strict mode may treat this as error/undefined depending on contract)
             
-            # Add to literals
-            literals[predicate] = {
-                "value": reading.value,
-                "timestamp_us": reading.timestamp_us
-            }
+            # Add to literals (purely a type registry in C_safe)
+            # Actual grounded truth values are carried in modal sets below by design.
+            literals[predicate] = {"type": "boolean"}
             
             # Epistemic grounding (YOUR policy)
+            # Optional: hysteresis adapter updates reading.confidence/value before thresholding
             if reading.confidence >= self.KNOWLEDGE_THRESHOLD:
                 knowledge[predicate] = reading.value
             elif reading.confidence >= self.BELIEF_THRESHOLD:
@@ -222,20 +225,21 @@ class NoeGuardNode:  # (Node):  # Would inherit from rclpy.node.Node
             self._execute_action(action)
             self._log_provenance(result, context, executed=True)
         
-        elif result["domain"] == "undefined":
-            # Epistemic gap - not enough knowledge
-            self._safe_halt("Epistemic gap: insufficient knowledge")
-            self._log_provenance(result, context, executed=False)
-        
         elif result["domain"] == "error":
-            # Fail-stop - missing literal, stale data, etc.
+            # Fail-stop - missing literal, stale data, or epistemic mismatch (belief-only)
             error_code = result.get("code", "UNKNOWN")
-            self._safe_halt(f"Fail-stop: {error_code}")
+            self._safe_halt(f"Fail-stop (Error): {error_code}")
+            self._log_provenance(result, context, executed=False)
+            
+        elif result["domain"] == "undefined":
+            # Gated block / condition failed gracefully
+            self._safe_halt("Action blocked by condition (Undefined)")
             self._log_provenance(result, context, executed=False)
         
         else:  # truth, numeric, question
             # Non-action result
             self._safe_halt(f"Non-action domain: {result['domain']}")
+            self._log_provenance(result, context, executed=False)
     
     # =========================================
     # Helpers
@@ -249,7 +253,11 @@ class NoeGuardNode:  # (Node):  # Would inherit from rclpy.node.Node
         print(f"ACTION EXECUTED: {action['verb']} {action['target']}")
     
     def _safe_halt(self, reason: str):
-        """Stop robot, log reason."""
+        """
+        Stop robot, log reason.
+        Note: Hysteresis (debounce/stickiness) lives in the grounding adapter;
+        supervisor decides fallback (hold mode, slow, stop) rather than Noe.
+        """
         # twist = Twist()  # Zero velocity
         # self.cmd_vel_pub.publish(twist)
         print(f"SAFE HALT: {reason}")
@@ -273,7 +281,7 @@ class NoeGuardNode:  # (Node):  # Would inherit from rclpy.node.Node
 #     rclpy.shutdown()
 ```
 
----
+<br />
 
 ## Key Integration Points
 
@@ -306,7 +314,7 @@ else:
     halt()  # Undefined, error, or non-action
 ```
 
----
+<br />
 
 ## What Noe Adds Over Raw ROS 2
 
@@ -318,14 +326,14 @@ else:
 | "Why did it move?" - grep logs | Hash-verified audit trail |
 | Different logic per robot | Same chain across fleet |
 
----
+<br />
 
 ## Recommended Pattern
 
 ```
 10 Hz deliberation loop:
 ├── Build context from latest sensor state
-├── Evaluate Noe chain (sub-ms)
+├── Evaluate Noe chain (bounded/measured <15ms in Python reference)
 ├── If action: publish to /cmd_vel
 └── Always: log provenance record
 
