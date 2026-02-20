@@ -6,7 +6,7 @@
       "vectors": 10
     },
     "nip011_audit.json": {
-      "sha256": "87fb90f73df59761b498727f7583164d0a1e67f5c5b047af00f5f75ae14d88f9",
+      "sha256": "7196db2001482cc1f1a070a32feb894ee19d317ed93af7af74ede0e57ec6db83",
       "vectors": 2
     },
     "nip011_context.json": {
@@ -50,7 +50,7 @@
       "vectors": 4
     },
     "nip011_strict_actions.json": {
-      "sha256": "1e40f6d0cf81b7d47a1a25be43ad25ddd34480e4d807611db31e8cd3c72dadaa",
+      "sha256": "9465fd4caa3206f1a1299168ac2bd36c7ccfbcd142fe166d103d1c5be1fcb514",
       "vectors": 2
     },
     "nip011_ungrounded.json": {
