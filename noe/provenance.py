@@ -23,7 +23,7 @@ from pathlib import Path
 
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional, Tuple
-from noe.canonical import canonical_json, canonicalize_chain
+from noe.canonical import canonical_json, canonical_bytes, canonicalize_chain
 
 # Semantics version (NIP-005 K3 logic + operator definitions)
 SEMANTICS_VERSION = "NIP-005-v1.0"
@@ -132,9 +132,27 @@ def _normalize_action(obj: Any) -> Any:
     return obj
 
 
+def compute_action_hash_v1(action_obj: Dict[str, Any]) -> str:
+    """
+    Legacy v1 action hash, kept for backward compatibility with older artifacts.
+    Uses the old ensure_ascii=False serialization from prior parser versions.
+    """
+    if not isinstance(action_obj, dict):
+        raise ValueError("compute_action_hash_v1 expects a dict.")
+    
+    target = action_obj.get("target")
+    if isinstance(target, dict) and target.get("type") == "action":
+        if "action_hash" not in target:
+            target["action_hash"] = compute_action_hash_v1(target)
+        action_obj["child_action_hash"] = target.get("action_hash")
+    
+    normalized = _normalize_action(action_obj)
+    payload = json.dumps(normalized, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
 def compute_action_hash(action_obj: Dict[str, Any]) -> str:
     """
-    Compute a deterministic SHA-256 hash for an action object.
+    Compute a deterministic SHA-256 hash for an action object (v2 defaults).
 
     The hash depends only on the normalized action structure and nested targets,
     independent of evaluation mode or context hash.
@@ -162,9 +180,8 @@ def compute_action_hash(action_obj: Dict[str, Any]) -> str:
     # Normalize and hash
     normalized = _normalize_action(action_obj)
     
-    # Use canonical_json for serialization (ensure_ascii=True, allow_nan=False)
-    # This fixes the divergence with the parser's old ensure_ascii=False
-    payload = canonical_json(normalized).encode("utf-8")
+    # Use canonical_bytes (noe-canonical-v1 with float ban)
+    payload = canonical_bytes(normalized)
 
     return hashlib.sha256(payload).hexdigest()
 
@@ -228,7 +245,7 @@ def compute_execution_request_hash(chain_str: str,
         h_total,
         domain_pack_hash
     ]
-    payload = canonical_json(payload_list).encode("utf-8")
+    payload = canonical_bytes(payload_list)
     
     return hashlib.sha256(payload).hexdigest()
 
@@ -249,7 +266,7 @@ def compute_decision_hash(chain_str: str,
         h_total,
         domain_pack_hash
     ]
-    payload = canonical_json(payload_list).encode("utf-8")
+    payload = canonical_bytes(payload_list)
     
     return hashlib.sha256(payload).hexdigest()
 
@@ -274,7 +291,7 @@ def compute_child_action_hash(parent_action_hash: str,
         h_total,
         domain_pack_hash
     ]
-    payload = canonical_json(payload_list).encode("utf-8")
+    payload = canonical_bytes(payload_list)
     
     return hashlib.sha256(payload).hexdigest()
 
