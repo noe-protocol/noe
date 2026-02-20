@@ -62,7 +62,7 @@ DEFAULT_CONTEXT_PARTIAL = {
     "domain": {},
     "local": {}, 
     "literals": {},
-    "spatial": {"thresholds": {"near": 1.0, "far": 10.0}, "orientation": {}},
+    "spatial": {"thresholds": {"near": 1, "far": 10}, "orientation": {}},
     "temporal": {"now": 0, "max_skew_ms": 1000},
     "modal": {},
     "axioms": {"value_system": {}},
@@ -265,7 +265,7 @@ def compute_stale_flag(C_total):
         # Strict context validation should catch missing 'now'/'skew' in shape check?
         return False, None
         
-    import math
+    # Ensure types
     try:
         now = float(now)
         skew = float(skew)
@@ -273,20 +273,10 @@ def compute_stale_flag(C_total):
     except (ValueError, TypeError):
         return False, "Non-numeric temporal fields"
 
-    # Strict Check: Reject NaN / Inf
-    if not (math.isfinite(now) and math.isfinite(skew) and math.isfinite(ts)):
-        return True, "C.timestamp must be finite (rejected NaN/Inf)"
-
     # Logic: if now - timestamp > skew -> Stale
     if _DEBUG_ENABLED: print(f"DEBUG: Stale Check: now={now}, ts={ts}, skew={skew}, diff={now-ts}")
-    
-    # 1. Past Staleness
     if (now - ts) > skew:
          return True, f"Timestamp {ts} is older than now {now} by > {skew}ms"
-         
-    # 2. Future Drift (Time Travel)
-    if (ts - now) > skew:
-         return True, f"Timestamp {ts} is in future relative to {now} by > {skew}ms"
     
     return False, None
 
