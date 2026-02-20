@@ -38,7 +38,8 @@ CONTEXT_REQUIREMENTS = {
     # Action / delivery
     "vus": ["delivery"],
     "vel": ["delivery"],
-    "men": ["audit"],
+    "men": ["audit", "spatial"],
+    "mek": ["spatial"],
     "kra": [],
     "noq": ["delivery"],
 
