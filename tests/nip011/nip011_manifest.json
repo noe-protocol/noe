@@ -108,7 +108,7 @@
         "count": 1
     },
     "nip011_strict_actions.json": {
-        "sha256": "1e40f6d0cf81b7d47a1a25be43ad25ddd34480e4d807611db31e8cd3c72dadaa",
+        "sha256": "9465fd4caa3206f1a1299168ac2bd36c7ccfbcd142fe166d103d1c5be1fcb514",
         "test_ids": [
             "T-STRICT-ACTION-001",
             "T-STRICT-ACTION-003"
@@ -135,15 +135,22 @@
         "count": 3
     },
     "nip011_audit.json": {
-        "sha256": "87fb90f73df59761b498727f7583164d0a1e67f5c5b047af00f5f75ae14d88f9",
+        "sha256": "7196db2001482cc1f1a070a32feb894ee19d317ed93af7af74ede0e57ec6db83",
         "test_ids": [
             "AUD_001",
             "AUD_002"
         ],
         "count": 2
     },
+    "nip011_experimental.json": {
+        "sha256": "5d31a3318283e667380f77cbecc6526700129a7e382b2192a44c94186c23bb59",
+        "test_ids": [
+            "EXP_KRA_001"
+        ],
+        "count": 1
+    },
     "nip011_adversarial.json": {
-        "sha256": "f6a65e2e50d4c351817631a7bea71b62b2cd7e7863127f57bdf02d2149721eb7",
+        "sha256": "2fc5631d138ab1c6259ba0e186dc6c93ed1d26a74117c0a7d99ced8e953a373a",
         "test_ids": [
             "ADV_001",
             "ADV_002",
