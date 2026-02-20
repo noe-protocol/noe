@@ -53,7 +53,7 @@ from noe.canonical import canonical_json, canonical_bytes
 # ---------------------------------------------------------------------------
 
 def hash_json(obj: Any) -> str:
-    return hashlib.sha256(canonical_bytes(obj)).hexdigest()
+    return hashlib.sha256(canonical_json(obj).encode("utf-8")).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -66,23 +66,24 @@ def build_c_root() -> Dict[str, Any]:
     """
     return {
         "units": {
-            "distance": "meters",
-            "time": "seconds",
+            "distance": "millimeters",
+            "time": "microseconds",
+            "probability": "milliprob",
         },
         "safety": {
-            "max_staleness_ms": 100.0,  # Tight industrial tolerance
+            "max_staleness_ms": 100,  # Tight industrial tolerance
         },
         "temporal": {
-            "max_skew_ms": 50.0,
-            "timestamp": 0.0,
+            "max_skew_ms": 50,
+            "timestamp": 0,
             "clock": "epoch_us"
         },
         "modal": {
             "schema": "v1",
         },
         "spatial": {
-             "thresholds": {"near": 1.0, "far": 10.0},
-             "orientation": {"target": 0.0, "tolerance": 5.0} 
+             "thresholds": {"near": 1000, "far": 10000},  # mm
+             "orientation": {"target": 0, "tolerance": 5}
         },
         "axioms": {
              "value_system": {
@@ -105,13 +106,13 @@ def build_c_domain_navigation() -> Dict[str, Any]:
         "robot": {
             "id": "HOSP-ROBOT-01",
             "zone_type": "patient_ward_active",
-            "max_decibels": 45.0,
+            "max_decibels": 45,
             "compliance": ["HIPAA_visual_redaction", "ISO_13482"],
-            "max_speed_m_s": 0.8,
+            "max_speed_mm_s": 800,
         },
         "navigation": {
-            "door_depth_open_threshold_m": 0.6,
-            "door_depth_wall_threshold_m": 0.2,
+            "door_depth_open_threshold_mm": 600,
+            "door_depth_wall_threshold_mm": 200,
             "requires_visual_and_lidar": True,
         },
         "safety": {
@@ -124,32 +125,33 @@ def build_c_domain_navigation() -> Dict[str, Any]:
     }
 
 
-def _build_rich_literals(vision_ok: bool, lidar_ok: bool, now_s: float) -> Dict[str, Any]:
+def _build_rich_literals(vision_ok: bool, lidar_ok: bool, now_us: int) -> Dict[str, Any]:
     """
-    Constructs the rich "Industrial" literal set with source confidence and metadata.
+    Constructs the rich "Industrial" literal set.
+    All values are integer-typed (milliprob confidence, microsecond timestamps,
+    millimeter distances) to comply with noe-canonical-v1 float ban.
     """
     
-    # Vision
-    vision_conf = 0.97 if vision_ok else 0.40 # Low confidence if false/undetected
+    # Vision confidence (milliprob: 1000 = certain)
+    vision_conf = 970 if vision_ok else 400
     if vision_ok and not lidar_ok:
-        vision_conf = 0.93 # Hallucination case (High confidence false positive)
+        vision_conf = 930  # Hallucination case (high confidence false positive)
 
     l_visual = {
         "value": vision_ok,
-        "confidence": vision_conf,
-        "timestamp": now_s,
+        "confidence_milli": vision_conf,
+        "timestamp_us": now_us,
         "source": "vlm_camera_main",
         "meta": {"class": "door_automatic_double"}
     }
 
-    # Lidar
-    lidar_val = 1.8 if lidar_ok else 0.1
+    # Lidar (millimeters)
+    lidar_val_mm = 1800 if lidar_ok else 100
     l_lidar = {
         "value": lidar_ok,
-        "confidence": 1.0,
-        "timestamp": now_s,
-        "raw_value": lidar_val,
-        "unit": "meters",
+        "confidence_milli": 1000,
+        "timestamp_us": now_us,
+        "raw_value_mm": lidar_val_mm,
         "source": "lidar_front_tof"
     }
 
@@ -160,91 +162,77 @@ def _build_rich_literals(vision_ok: bool, lidar_ok: bool, now_s: float) -> Dict[
         # Background Safety Signals (Always TRUE for this demo)
         "@patient_privacy_safe": {
             "value": True,
-            "confidence": 0.99,
-            "timestamp": now_s,
+            "confidence_milli": 990,
+            "timestamp_us": now_us,
             "source": "face_blur_pipeline",
             "raw_value": "no_pii_detected"
         },
         "@path_clear_static": {
             "value": True,
-            "confidence": 0.98,
-            "timestamp": now_s,
+            "confidence_milli": 980,
+            "timestamp_us": now_us,
             "source": "costmap_2d"
         },
         "@floor_traction_ok": {
             "value": True,
-            "confidence": 0.95,
-            "timestamp": now_s,
+            "confidence_milli": 950,
+            "timestamp_us": now_us,
             "raw_value": "dry",
             "source": "wheel_torque_monitor"
         },
         "@emergency_stop_disengaged": {
             "value": True,
-            "confidence": 1.0,
-            "timestamp": now_s,
+            "confidence_milli": 1000,
+            "timestamp_us": now_us,
             "source": "hw_safety_loop"
         },
         "@wifi_telemetry_ok": {
             "value": True,
-            "confidence": 1.0,
-            "timestamp": now_s,
+            "confidence_milli": 1000,
+            "timestamp_us": now_us,
             "raw_value": -42,
             "unit": "dBm"
         },
         "@battery_safe_level": {
             "value": True,
-            "confidence": 1.0,
-            "timestamp": now_s,
-            "raw_value": 82.0,
+            "confidence_milli": 1000,
+            "timestamp_us": now_us,
+            "raw_value": 82,
             "unit": "percent"
         },
         
         # 2. The Semantic Safety Layer (People)
         "@human_clear": {
             "value": True,
-            "confidence": 0.99,
-            "timestamp": now_s,
+            "confidence_milli": 990,
+            "timestamp_us": now_us,
             "source": "yolo_v8_human_head",
-            "meta": { "nearest_person_dist_m": 4.2 } # Real metric from tracker
+            "meta": { "nearest_person_dist_mm": 4200 }
         },
         
         # 3. The Kinetic Safety Layer (Movement Prediction)
         "@path_dynamic_prediction": {
             "value": True,
-            "confidence": 0.95,
-            "timestamp": now_s,
+            "confidence_milli": 950,
+            "timestamp_us": now_us,
             "source": "kalman_filter_tracker",
-            "raw_value": "trajectory_clear_3s" # Predictive safety horizon
+            "raw_value": "trajectory_clear_3s"
         },
         
-        # 4. Hardware Safety Layer
-        
-        # Action Targets (Atomic Maneuver)
-        "@nav2_navigate_to_pose": {
-            "value": "action_target",
-            "timestamp": now_s,
-            "type": "waypoint"
-        },
-        "@nav2_spin": {
-            "value": "action_target",
-            "timestamp": now_s,
-            "type": "orientation"
-        },
-        "@nav2_drive_on_heading": {
-            "value": "action_target",
-            "timestamp": now_s,
-            "type": "maneuver"
-        }
+        # 4. Hardware Safety Layer — Action Targets (Atomic Maneuver)
+        "@nav2_navigate_to_pose": True,
+        "@nav2_spin": True,
+        "@nav2_drive_on_heading": True
     }
 
 
-def build_c_local_hallucinated(now_s: float) -> Dict[str, Any]:
+def build_c_local_hallucinated(now_us: int) -> Dict[str, Any]:
     """RUN 1: Vision hallucinates (True), Lidar sees wall (False)."""
     return {
-        "literals": _build_rich_literals(vision_ok=True, lidar_ok=False, now_s=now_s),
+        "literals": _build_rich_literals(vision_ok=True, lidar_ok=False, now_us=now_us),
         "temporal": {
-            "now": now_s,
-            "timestamp": now_s,
+            "now": now_us,
+            "timestamp": now_us,
         },
         "modal": {
             "knowledge": {},
@@ -254,13 +242,13 @@ def build_c_local_hallucinated(now_s: float) -> Dict[str, Any]:
     }
 
 
-def build_c_local_realdoor(now_s: float) -> Dict[str, Any]:
+def build_c_local_realdoor(now_us: int) -> Dict[str, Any]:
     """RUN 2: Real door (True), Lidar sees open (True)."""
     return {
-        "literals": _build_rich_literals(vision_ok=True, lidar_ok=True, now_s=now_s),
+        "literals": _build_rich_literals(vision_ok=True, lidar_ok=True, now_us=now_us),
         "temporal": {
-            "now": now_s,
-            "timestamp": now_s,
+            "now": now_us,
+            "timestamp": now_us,
         },
         "modal": {
             "knowledge": {},
@@ -501,16 +489,16 @@ def main():
     print("RUN 1: Hallucinated Door")
     print("-" * 72)
 
-    now_s = time.time()
-    c_local_hall = build_c_local_hallucinated(now_s)
+    now_us = time.time_ns() // 1_000
+    c_local_hall = build_c_local_hallucinated(now_us)
     c_merged_hall = merge_context_layers(c_root, c_domain, c_local_hall)
     c_safe_hall = project_safe_context(c_merged_hall)
 
     # Debug info
     l_vis = c_local_hall["literals"]["@visual_door_detect"]
     l_lid = c_local_hall["literals"]["@lidar_depth_open"]
-    print(f"  [Sensors] Vision: {l_vis['value']} (Conf: {l_vis['confidence']})")
-    print(f"  [Sensors] Lidar:  {l_lid['value']} (Conf: {l_lid['confidence']}, Raw: {l_lid.get('raw_value')} {l_lid.get('unit')})")
+    print(f"  [Sensors] Vision: {l_vis['value']} (Conf: {l_vis['confidence_milli']/1000:.2f})")
+    print(f"  [Sensors] Lidar:  {l_lid['value']} (Conf: {l_lid['confidence_milli']/1000:.1f}, Raw: {l_lid.get('raw_value_mm', 'N/A')} mm)")
 
     result_hall = evaluate_chain(c_safe_hall)
     has_action_hall = result_contains_action(result_hall)
@@ -545,15 +533,15 @@ def main():
     print("RUN 2: Real Door")
     print("-" * 72)
 
-    now_s2 = time.time()
-    c_local_real = build_c_local_realdoor(now_s2)
+    now_us2 = time.time_ns() // 1_000
+    c_local_real = build_c_local_realdoor(now_us2)
     c_merged_real = merge_context_layers(c_root, c_domain, c_local_real)
     c_safe_real = project_safe_context(c_merged_real)
 
     l_vis2 = c_local_real["literals"]["@visual_door_detect"]
     l_lid2 = c_local_real["literals"]["@lidar_depth_open"]
-    print(f"  [Sensors] Vision: {l_vis2['value']} (Conf: {l_vis2['confidence']})")
-    print(f"  [Sensors] Lidar:  {l_lid2['value']} (Conf: {l_lid2['confidence']}, Raw: {l_lid2.get('raw_value')} {l_lid2.get('unit')})")
+    print(f"  [Sensors] Vision: {l_vis2['value']} (Conf: {l_vis2['confidence_milli']/1000:.2f})")
+    print(f"  [Sensors] Lidar:  {l_lid2['value']} (Conf: {l_lid2['confidence_milli']/1000:.1f}, Raw: {l_lid2.get('raw_value_mm', 'N/A')} mm)")
 
     result_real = evaluate_chain(c_safe_real)
     # Debug: print result to diagnose
