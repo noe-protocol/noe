@@ -46,15 +46,14 @@ from typing import Any, Dict, Tuple
 # Adjust import to your project layout
 from noe.noe_parser import run_noe_logic
 from noe.provenance import compute_action_hash
-from noe.canonical import canonical_json
-
+from noe.canonical import canonical_json, canonical_bytes
 
 # ---------------------------------------------------------------------------
 # Helpers: canonical JSON + hashing
 # ---------------------------------------------------------------------------
 
 def hash_json(obj: Any) -> str:
-    return hashlib.sha256(canonical_json(obj).encode("utf-8")).hexdigest()
+    return hashlib.sha256(canonical_bytes(obj)).hexdigest()
 
 
 # ---------------------------------------------------------------------------
@@ -76,6 +75,7 @@ def build_c_root() -> Dict[str, Any]:
         "temporal": {
             "max_skew_ms": 50.0,
             "timestamp": 0.0,
+            "clock": "epoch_us"
         },
         "modal": {
             "schema": "v1",
@@ -304,6 +304,14 @@ def project_safe_context(c_merged: Dict[str, Any]) -> Dict[str, Any]:
     """
     safe = deepcopy(c_merged)
 
+    # Make derived temporal variables explicitly visible
+    if "temporal" not in safe:
+        safe["temporal"] = {}
+    safe["temporal"]["derived"] = {
+        "max_literal_age_us": int(safe.get("safety", {}).get("max_staleness_ms", 100) * 1000),
+        "skew_us": int(safe.get("temporal", {}).get("max_skew_ms", 50) * 1000)
+    }
+
     literals = safe.get("literals", {})
     modal = safe.setdefault("modal", {})
     knowledge = modal.setdefault("knowledge", {})
@@ -428,11 +436,25 @@ def build_certificate(scenario_name: str,
                 **(result.get("meta") or {})
             },
         },
+        "decision": {
+            "guard": "khi",
+            "required_knowledge": [
+                "@visual_door_detect",
+                "@lidar_depth_open"
+            ],
+            "inputs_knowledge_present": list(c_safe.get("modal", {}).get("knowledge", {}).keys()),
+            "satisfied": True if result.get("domain") in ("action", "list") else False
+        },
         "evaluation": {
             "mode": "strict",
             "runtime": "python-reference",
             "nip": ["NIP-005", "NIP-009", "NIP-010", "NIP-014"]
         },
+        "hashing": {
+            "canonicalization": "noe-canonical-v1",
+            "hash": "sha256",
+            "action_hash_version": "v2"
+        }
     }
 
     if result_contains_action(result):
