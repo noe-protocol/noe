@@ -1838,18 +1838,27 @@ class NoeEvaluator(PTNodeVisitor):
             print(f"DEBUG visit_action_event: verb={verb}, target={target}, type={type(target)}")
 
         # Unwrap literal object
+        # For execution-bearing verbs (mek, men), the hashed target is the SYMBOLIC KEY
+        # (e.g., "@release_pallet"), not the resolved literal value blob.
+        # This prevents context floats (confidence, timestamps) from leaking into action_hash.
+        # Exception: nested action targets use the resolved action (pointer semantics).
         if isinstance(target, dict) and target.get("domain") == "literal":
-             # For 'men' (audit), we need the reference key, not the evaluated truth value.
-             # e.g. men @safe_zone -> men "@safe_zone" (audit the definition), NOT men True.
-             # Exception: if it wraps an action, we unwrap to the action.
              val = target["value"]
-             if verb == "men" and not (isinstance(val, dict) and val.get("type") == "action"):
-                 target = target["key"]
+             if not (isinstance(val, dict) and val.get("type") == "action"):
+                 # Symbolic ref: use the literal key with @ prefix
+                 # (canonical_literal_key strips @, but we want it for action target identity)
+                 key = target.get("key")
+                 if key is None:
+                     return {
+                         "domain": "error",
+                         "code": "ERR_BAD_ACTION_TARGET_REF",
+                         "value": f"Literal operand for '{verb}' has no 'key' field",
+                         "meta": {"verb": verb}
+                     }
+                 target = "@" + key if not key.startswith("@") else key
              else:
+                 # Nested action: unwrap to the action object (pointer semantics)
                  target = val
-                 
-             if self.debug and verb == "mek":
-                 print(f"DEBUG visit_action_event: after unwrap, target={target}")
 
         # Propagate errors from target (e.g. morphology errors)
         if isinstance(target, dict) and target.get("domain") == "error":
