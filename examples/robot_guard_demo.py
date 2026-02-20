@@ -27,7 +27,7 @@ from copy import deepcopy
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from noe.noe_parser import run_noe_logic
+from noe.noe_runtime import NoeRuntime
 from noe.context_manager import ContextManager
 
 # ==========================================
@@ -201,6 +201,7 @@ def run_robot_loop():
     print(f"    MaxSkew:  {MAX_SKEW_MS}ms")
     
     base_time = 1700000000000.0 # Arbitrary epoch ms
+    actual_verdicts = {}
     
     for scenario in SCENARIOS:
         tick = scenario["tick"]
@@ -214,26 +215,78 @@ def run_robot_loop():
         # 2. Noe Validator Step
         start_ns = time.monotonic_ns()
         
-        # We use strict mode for the robot guard
-        result = run_noe_logic(scenario["chain"], ctx_data, mode="strict")
+        from noe.context_manager import ContextStaleError, BadContextError
+        try:
+            cm = ContextManager(
+                root=ctx_data.get("root", {}),
+                domain=ctx_data.get("domain", {}),
+                staleness_ms=int(ctx_data.get("root", {}).get("temporal", {}).get("max_skew_ms", MAX_SKEW_MS)),
+                # time_fn is defined as the current monotonic tick time simulating the validator's real wall clock
+                # ContextManager converts this internally via int(time_fn() * 1000)
+                time_fn=lambda: (base_time + scenario["drift_ms"]) / 1000.0
+            )
+            # Ensure the last update reflects the snapshot's base_time, not the drifted eval time
+            cm.update_local(ctx_data.get("local", {}))
+            cm._last_local_update_ms = int(base_time)
+            runtime = NoeRuntime(context_manager=cm, strict_mode=True)
+            
+            # Explicitly validate the snapshot for missing shards (like missing spatial)
+            from noe.noe_validator import validate_context_strict
+            snap = cm.snapshot()
+            if snap.is_stale:
+                raise ContextStaleError("Context skewed beyond max_skew_ms")
+            is_valid, err_msg = validate_context_strict(snap.structured)
+            if not is_valid:
+                raise BadContextError(err_msg)
+            
+            # We use strict mode for the robot guard
+            # All freshness and context validation happens internally within evaluate()
+            result_obj = runtime.evaluate(scenario["chain"])
+        except (ContextStaleError, BadContextError) as e:
+            class MockResult: pass
+            result_obj = MockResult()
+            result_obj.domain = "error"
+            result_obj.error = "ERR_CONTEXT_STALE" if isinstance(e, ContextStaleError) else "ERR_BAD_CONTEXT"
+            result_obj.value = str(e)
+            result_obj.context_hash = "N/A"
         
         duration_ns = time.monotonic_ns() - start_ns
         
         # 3. Analyze Verdict
         # Actions can be returned as domain="action" OR domain="list" (for sek blocks)
-        verdict = "ALLOWED" if result["domain"] in ["action", "list"] else "BLOCKED"
-        reason_code = result.get("code") or result["domain"]
-        reason_msg = result.get("value")
+        verdict = "ALLOWED" if result_obj.domain in ["action", "list"] else "BLOCKED"
+        reason_code = getattr(result_obj, "error", None)
+        reason_msg = str(getattr(result_obj, "value", "Unknown Failure")) if result_obj.domain == "error" else None
+        
+        # Extract strict codes from message if passed through value or error (e.g. 'ERR_EPISTEMIC_MISMATCH: msg')
+        if reason_code and ":" in reason_code and reason_code.split(":")[0].startswith("ERR_"):
+            parts = reason_code.split(":", 1)
+            reason_code = parts[0].strip()
+            if not reason_msg or reason_msg == "Unknown Failure" or reason_msg == getattr(result_obj, "error", None):
+                reason_msg = parts[1].strip()
+                
+        if result_obj.domain == "error" and not reason_code:
+            if reason_msg and ":" in reason_msg and reason_msg.split(":")[0].startswith("ERR_"):
+                parts = reason_msg.split(":", 1)
+                reason_code = parts[0].strip()
+                reason_msg = parts[1].strip()
+            else:
+                reason_code = "error"
+                
+        if not reason_code:
+            reason_code = result_obj.domain
         
         # Refine Epistemic/Missing Errors per Spec
         missing_shards = []
         epistemic_evidence = []
         
         if tick == 4: # EPISTEMIC_CONFLICT
-             # Force specific error code for demo purposes if undefined
-             if reason_code == "undefined":
-                 reason_code = "ERR_EPISTEMIC_MISMATCH"
-                 reason_msg = "Claim 'shi @hidden_danger' not supported by C.modal.knowledge"
+             # Error code expected from strict validation of shi check failing against C_safe
+             # Our NoeRuntime already transforms this into ERR_EPISTEMIC_MISMATCH under the hood 
+             # if the domain resolves to undefined/error. Just extract it naturally.
+             if reason_code == "error":
+                 # Fallback if details are missing
+                 if not reason_msg: reason_msg = "Claim 'shi @hidden_danger' not supported by C.modal.knowledge"
                  epistemic_evidence = ["MISSING: @hidden_danger"]
 
         if tick == 5: # MISSING_SHARD
@@ -249,7 +302,7 @@ def run_robot_loop():
             if tick in [6, 7]:  # Guarded action scenarios
                 print(f"    Action:  MOVE_TO_ZONE1 (guarded)")
                 # Extract action hash from result
-                action_data = result.get("value")
+                action_data = result_obj.value
                 if isinstance(action_data, list) and len(action_data) > 0:
                     action_hash = action_data[0].get("action_hash", "N/A")
                     event_hash = action_data[0].get("event_hash", "N/A")
@@ -276,7 +329,7 @@ def run_robot_loop():
             "execution_duration_ns": duration_ns,
             "chain_text": scenario["chain"],
             "verdict": verdict,
-            "result_domain": result["domain"],
+            "result_domain": result_obj.domain,
             "reason_code": reason_code,
             "error_details": reason_msg if verdict == "BLOCKED" else None,
             "action": ("MOVE_TO_ZONE1" if tick in [6, 7] else "MOVE_TO_SAFE_ZONE") if verdict == "ALLOWED" else None,
@@ -284,11 +337,11 @@ def run_robot_loop():
                 "registry_hash": "a1b2c3d4e5f6...", # Mocked for demo
                 "commit_hash": os.getenv("GIT_COMMIT", "dirty"),
                 "chain_hash": hash(scenario["chain"]), 
-                "context_hash": result.get("meta", {}).get("context_hash"),
+                "context_hash": result_obj.context_hash,
                 "action_hash": (
-                    result.get("value")[0].get("action_hash") 
-                    if verdict == "ALLOWED" and isinstance(result.get("value"), list) and len(result.get("value")) > 0
-                    else result.get("value", {}).get("action_hash") if verdict == "ALLOWED" and isinstance(result.get("value"), dict)
+                    result_obj.value[0].get("action_hash") 
+                    if verdict == "ALLOWED" and isinstance(result_obj.value, list) and len(result_obj.value) > 0
+                    else result_obj.value.get("action_hash") if verdict == "ALLOWED" and isinstance(result_obj.value, dict)
                     else None
                 )
             },
@@ -304,9 +357,39 @@ def run_robot_loop():
             }
         }
         
+        # Record for golden validation
+        actual_verdicts[tick] = f"{verdict}:{reason_code}" if verdict == "BLOCKED" else "ALLOWED"
+        
         write_audit_record(audit_record)
 
-    print(f"\n[*] Simulation Complete. Audit log written to {LOG_FILE}\n")
+    print(f"\n[*] Simulation Complete. Audit log written to {LOG_FILE}")
+    
+    # 5. Golden Verdict Vector Assertion (Anti-Regression Anchor)
+    # This prevents the simulator from silently decaying in CI if rules relax
+    golden_verdicts = {
+        1: "ALLOWED",
+        2: "BLOCKED:ERR_CONTEXT_STALE",
+        3: "ALLOWED",
+        4: "BLOCKED:ERR_EPISTEMIC_MISMATCH",
+        5: "BLOCKED:ERR_BAD_CONTEXT",
+        6: "ALLOWED",
+        7: "BLOCKED:undefined"
+    }
+    print("\n[*] Validating against golden verdict vector:")
+    passed = True
+    for t_id, expected in golden_verdicts.items():
+        actual = actual_verdicts.get(t_id)
+        if actual == expected:
+            print(f"    Tick {t_id}: MATCH ({actual})")
+        else:
+            print(f"    Tick {t_id}: REGRESSION! Expected '{expected}', got '{actual}'")
+            passed = False
+    
+    if not passed:
+        import sys
+        sys.exit(1)
+    else:
+        print("    All ticks matched golden vector.")
 
 if __name__ == "__main__":
     setup_logs()
