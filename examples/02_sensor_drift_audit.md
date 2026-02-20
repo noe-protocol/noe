@@ -2,46 +2,57 @@
 
 ## Intent
 
-If we **know** the distance sensors disagree beyond a safe threshold:
-1. Emit a **delivery event** to a safety/audit channel
-2. Write a **provenance record** into `C.audit.log`
+This demonstrates **multi-sink emission**: a single epistemic trigger triggers both delivery and audit actions.
 
-This demonstrates delivery + audit operators working together.
+- **Deterministic Ordering**: 
+In the reference demo runner, chains are evaluated in file order and action lists are concatenated in that order.
+
+- **Non-Execution Semantics**: 
+Guard-fail is treated as a no-op.
+
+- **Safety Posture**: 
+This example uses a "positive authorization" trigger for audit/delivery. In production, you typically configure the projection or policy to ensure epistemic gaps are themselves auditable events.
+
+<br />
 
 ## Noe Chains
 
 Two chains evaluated in the same tick:
 
 ```
-shi @sensor_drift khi sek vus @safety_channel nek
-shi @sensor_drift khi sek men @sensor_drift_event nek
+shi @sensor_drift khi sek vus @safety_channel sek nek
+shi @sensor_drift khi sek men @sensor_drift_event sek nek
 ```
 
 **Breakdown**:
 - `shi @sensor_drift` – "I **know** sensors are in a drift condition"
-- `vus @safety_channel` – Delivery operator: send event via delivery channel
-- `men @sensor_drift_event` – Audit/provenance operator: log this event
+- `vus @safety_channel` – Delivery operator: request event routing via delivery route
+- `men @sensor_drift_event` – Audit operator: request append to provenance record
 - Both chains only fire when drift is epistemically known true; otherwise `undefined` ⇒ no-op
 
----
+<br />
 
 ## Tick A: Sensors Agree (No Audit, No Delivery)
 
 Assume two distance sensors:
-- `lidar_distance_m = 1.2`
-- `ultra_distance_m = 1.25`
-- Drift threshold = 0.2 m → **sensors are consistent**
+- `lidar_distance_mm = 1200`
+- `ultra_distance_mm = 1250`
+- Drift threshold = 200 mm → **sensors are consistent**
 
 We compute `@sensor_drift = false`.
 
 ### Context (Tick A, Before Evaluation)
+> [!NOTE]
+> We show `C_total` below for traceability. Replay/evaluation uses the projected `C_safe` layer.  
+> **Projection Assumption**: Upstream sensor fusion computes the `@sensor_drift` literal; projection admits it into `C_safe.modal.knowledge` only if both lidar/ultrasonic readings are fresh (`max_staleness_us`) and the drift threshold is exceeded.  
+> *(Not shown: After projection, `@sensor_drift` is `false` in Tick A and `true` in Tick B. The Noe kernel evaluates against this grounded fact; the raw sensor JSON is retained purely for audit traceability).*
 
 ```json
 {
   "root": {
-    "temporal": { "now_ms": 2000 },
+    "temporal": { "now_us": 2000000 },
     "safety": {
-      "sensor_drift_threshold_m": 0.2
+      "sensor_drift_threshold_mm": 200
     }
   },
   "domain": {
@@ -53,10 +64,10 @@ We compute `@sensor_drift = false`.
     }
   },
   "local": {
-    "timestamp_ms": 2000,
+    "timestamp_us": 2000000,
     "sensors": {
-      "lidar": { "distance_m": 1.20 },
-      "ultra": { "distance_m": 1.25 }
+      "lidar": { "distance_mm": 1200, "sample_us": 1998000 },
+      "ultra": { "distance_mm": 1250, "sample_us": 1999000 }
     },
     "literals": {
       "@sensor_drift": false
@@ -64,7 +75,7 @@ We compute `@sensor_drift = false`.
   },
   "delivery": {
     "status": {},
-    "channels": {
+    "routes": {
       "@safety_channel": {
         "kind": "topic",
         "endpoint": "safety/audit"
@@ -86,22 +97,22 @@ We compute `@sensor_drift = false`.
 ### Resulting Actions (Tick A)
 
 ```json
-[
-  { "domain": "undefined", "value": "undefined" },
-  { "domain": "undefined", "value": "undefined" }
-]
+{
+  "domain": "undefined",
+  "value": "undefined"
+}
 ```
 
 **Context after Tick A**: Unchanged (no new delivery status, no audit log entries)
 
----
+<br />
 
 ## Tick B: Sensors Drift (Audit + Delivery Fire)
 
 Now sensors diverge beyond threshold:
-- `lidar_distance_m = 0.4`
-- `ultra_distance_m = 0.9`
-- Difference = 0.5 > 0.2 → **drift condition detected**
+- `lidar_distance_mm = 400`
+- `ultra_distance_mm = 900`
+- Difference = 500 > 200 → **drift condition detected**
 
 We set `@sensor_drift = true` in `C_local.literals`.
 
@@ -110,9 +121,9 @@ We set `@sensor_drift = true` in `C_local.literals`.
 ```json
 {
   "root": {
-    "temporal": { "now_ms": 2100 },
+    "temporal": { "now_us": 2100000 },
     "safety": {
-      "sensor_drift_threshold_m": 0.2
+      "sensor_drift_threshold_mm": 200
     }
   },
   "domain": {
@@ -124,10 +135,10 @@ We set `@sensor_drift = true` in `C_local.literals`.
     }
   },
   "local": {
-    "timestamp_ms": 2100,
+    "timestamp_us": 2100000,
     "sensors": {
-      "lidar": { "distance_m": 0.40 },
-      "ultra": { "distance_m": 0.90 }
+      "lidar": { "distance_mm": 400, "sample_us": 2098000 },
+      "ultra": { "distance_mm": 900, "sample_us": 2099000 }
     },
     "literals": {
       "@sensor_drift": true
@@ -135,7 +146,7 @@ We set `@sensor_drift = true` in `C_local.literals`.
   },
   "delivery": {
     "status": {},
-    "channels": {
+    "routes": {
       "@safety_channel": {
         "kind": "topic",
         "endpoint": "safety/audit"
@@ -157,26 +168,28 @@ We set `@sensor_drift = true` in `C_local.literals`.
 ### Resulting Actions (Tick B)
 
 ```json
-[
-  {
-    "domain": "action",
-    "type": "action",
-    "verb": "vus",
-    "channel": "@safety_channel",
-    "payload": {
-      "event": "sensor_drift",
-      "lidar_distance_m": 0.40,
-      "ultra_distance_m": 0.90
+{
+  "domain": "list",
+  "value": [
+    {
+      "type": "action",
+      "kind": "delivery",
+      "verb": "vus",
+      "route": "@safety_channel",
+      "payload": { "event": "sensor_drift", "lidar_distance_mm": 400, "ultra_distance_mm": 900 }
+    },
+    {
+      "type": "action",
+      "kind": "audit",
+      "verb": "men",
+      "event": "@sensor_drift_event"
     }
-  },
-  {
-    "domain": "action",
-    "type": "action",
-    "verb": "men",
-    "event": "@sensor_drift_event"
-  }
-]
+  ]
+}
 ```
+
+> [!TIP]
+> Certificate output (NIP-010) adds top-level `context_hashes` and an `outcome.action_hash` encompassing this ordered list of actions.
 
 ### Integration
 
@@ -184,14 +197,17 @@ In the Noe runtime + Circular / ROS integration:
 - **Route** the `vus` action out via your delivery adapter (Kafka topic, ROS topic, HTTP, etc.)
 - **Apply** the `men` action to update `C.audit.log`
 
-### Context (Tick B, After Applying Actions)
+### Context (Tick B, After Applying Actions - Conceptual)
+
+> [!NOTE]
+> The Noe interpreter is **pure**. These context updates are applied **out-of-band** by system-level adapters *after* evaluation.
 
 ```json
 {
   "root": {
-    "temporal": { "now_ms": 2100 },
+    "temporal": { "now_us": 2100000 },
     "safety": {
-      "sensor_drift_threshold_m": 0.2
+      "sensor_drift_threshold_mm": 200
     }
   },
   "domain": {
@@ -203,10 +219,10 @@ In the Noe runtime + Circular / ROS integration:
     }
   },
   "local": {
-    "timestamp_ms": 2100,
+    "timestamp_us": 2100000,
     "sensors": {
-      "lidar": { "distance_m": 0.40 },
-      "ultra": { "distance_m": 0.90 }
+      "lidar": { "distance_mm": 400, "sample_us": 2098000 },
+      "ultra": { "distance_mm": 900, "sample_us": 2099000 }
     },
     "literals": {
       "@sensor_drift": true
@@ -215,12 +231,12 @@ In the Noe runtime + Circular / ROS integration:
   "delivery": {
     "status": {
       "last_sent": {
-        "channel": "@safety_channel",
+        "route": "@safety_channel",
         "event": "sensor_drift",
-        "time_ms": 2100
+        "time_us": 2100000
       }
     },
-    "channels": {
+    "routes": {
       "@safety_channel": {
         "kind": "topic",
         "endpoint": "safety/audit"
@@ -231,10 +247,10 @@ In the Noe runtime + Circular / ROS integration:
     "log": [
       {
         "event": "@sensor_drift_event",
-        "time_ms": 2100,
+        "time_us": 2100000,
         "details": {
-          "lidar_distance_m": 0.40,
-          "ultra_distance_m": 0.90
+          "lidar_distance_mm": 400,
+          "ultra_distance_mm": 900
         }
       }
     ]
@@ -242,12 +258,12 @@ In the Noe runtime + Circular / ROS integration:
 }
 ```
 
----
+<br />
 
 ## Key Insights
 
-1. **Multi-Channel Actions**: Single epistemic condition triggers both delivery and audit
-2. **Delivery Trace**: `C.delivery.status` records what was sent and when
-3. **Provenance**: `C.audit.log` provides replayable audit trail
-4. **Deterministic**: Same sensor readings + same chains = same delivery + audit actions
-5. **Safety-First**: Only acts when drift is **known** true, not on missing/ambiguous data
+1. **Multi-Channel Actions**: Single epistemic condition triggers both delivery and audit.
+2. **Delivery Trace**: `C.delivery.status` records what was sent and when (updated by delivery adapter).
+3. **Provenance**: `C.audit.log` provides replayable audit trail (updated by audit adapter).
+4. **Pure Evaluation**: The interpreter is a pure function over `C_safe`; state mutation is decoupled.
+5. **Deterministic**: Same sensor readings + same chains = same delivery + audit actions.
