@@ -24,16 +24,15 @@ from typing import Dict, Any, Optional
 # Adjust this import to match your runtime entrypoint
 from noe.noe_parser import run_noe_logic
 from noe.provenance import compute_action_hash
-from noe.canonical import canonical_json
+from noe.canonical import canonical_json, canonical_bytes
 
 
 # -----------------------------
 # Helpers: canonical JSON + hashing
 # -----------------------------
 
-
 def hash_json(obj: Any) -> str:
-    return hashlib.sha256(canonical_json(obj).encode("utf-8")).hexdigest()
+    return hashlib.sha256(canonical_bytes(obj)).hexdigest()
 
 
 # -----------------------------
@@ -58,7 +57,10 @@ def build_c_root() -> Dict[str, Any]:
     return {
         "units": {"temperature": "celsius", "time": "microseconds", "distance": "millimeters", "angle": "milliradians"},
         "safety": {"max_temp_millicelsius": 8000, "min_temp_millicelsius": 2000},
-        "temporal": {"max_staleness_us": 5_000_000},  # 5 seconds
+        "temporal": {
+            "max_staleness_us": 5_000_000,  # 5 seconds
+            "clock": "epoch_us"
+        },
         "modal": {"schema": "v1"},
         "axioms": {
             "value_system": {
@@ -73,7 +75,7 @@ def build_c_root() -> Dict[str, Any]:
 
 def build_c_domain() -> Dict[str, Any]:
     return {
-        "domain_entities": {
+        "entities": {
             "shipment": {
                 "id": "SHIP-12345",
                 "product": "vaccine_vial",
@@ -87,6 +89,11 @@ def build_c_domain() -> Dict[str, Any]:
             "location": {
                 "warehouse_id": "WH-01",
                 "allowed_loading_bays": ["BAY-07"],
+            },
+            "pallet_system": {
+                "id": "CTRL_PALLET_01",
+                "type": "control_point",
+                "symbol": "@release_pallet"
             }
         },
         "safety": {"min_continuous_temp_ok_seconds": 60}
@@ -122,9 +129,8 @@ def build_c_local() -> Dict[str, Any]:
                 "source": "zone_lidar_02"
             },
             "@release_pallet": {
-                "value": "action_target",
-                "timestamp_us": fresh_us,
-                "type": "control_point"
+                "value": True,
+                "timestamp_us": fresh_us
             }
         },
         "temporal": {
@@ -204,6 +210,14 @@ def project_safe_context(c_merged):
         5_000_000  # 5 seconds default
     )
     now_us = temporal.get("now_us", 0)
+
+    # Make derived temporal variables explicitly visible
+    if "temporal" not in safe:
+        safe["temporal"] = {}
+    safe["temporal"]["derived"] = {
+        "max_literal_age_us": max_staleness_us,
+        "skew_us": 0  # Adjust as needed if local skew is tracked
+    }
 
     # 1. Prune stale literals
     literals = safe.get("literals", {})
@@ -337,10 +351,26 @@ def build_certificate(c_root, c_domain, c_local, c_safe, decision_result):
                 "mode": "strict"
             }
         },
+        "decision": {
+            "guard": "khi",
+            "required_knowledge": [
+                "@temperature_ok",
+                "@location_ok",
+                "@chain_of_custody_ok",
+                "@human_clear"
+            ],
+            "inputs_knowledge_present": list(c_safe.get("modal", {}).get("knowledge", {}).keys()),
+            "satisfied": True if domain in ("action", "list") else False
+        },
         "evaluation": {
             "mode": "strict",
             "runtime": "python-reference",
             "nip": ["NIP-005", "NIP-009", "NIP-010", "NIP-014"]
+        },
+        "hashing": {
+            "canonicalization": "noe-canonical-v1",
+            "hash": "sha256",
+            "action_hash_version": "v2"
         }
     }
 
