@@ -22,10 +22,10 @@ class TestBatch2Fixes(unittest.TestCase):
                 "entities": {"me": {"type": "agent"}},
                 "spatial": {
                     "unit": "generic",
-                    "thresholds": {"near": 1.0, "far": 5.0},
-                    "orientation": {"target": 0.0, "tolerance": 5.0} # Validation might require this
+                    "thresholds": {"near": 1, "far": 5},
+                    "orientation": {"target": 0, "tolerance": 5} # Validation might require this
                 },
-                "temporal": {"now": 1000.0, "max_skew_ms": 1000.0},
+                "temporal": {"now": 1000, "max_skew_ms": 1000},
                 "modal": {
                     "knowledge": {},
                     "belief": {"@p": True},
@@ -55,10 +55,10 @@ class TestBatch2Fixes(unittest.TestCase):
                 },
                 "delivery": {"status": {}},
                 "audit": {"log": []},
-                "timestamp": 1000.0,
+                "timestamp": 1000,
                 "_action_dag": {}
             },
-            "timestamp": 1000.0, # Validator ignores this, but keeping it for reference
+            "timestamp": 1000, # Validator ignores this, but keeping it for reference
             "_action_dag": {}
         }
 
