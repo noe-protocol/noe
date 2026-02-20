@@ -18,23 +18,23 @@ class TestSpatialOperators(unittest.TestCase):
             },
             "entities": {
                 "@robot": {
-                    "position": [0.0, 0.0],
-                    "velocity": [1.0, 0.0]  # Moving right (+x direction)
+                    "position": [0, 0],
+                    "velocity": [1, 0]  # Moving right (+x direction)
                 },
                 "@goal": {
-                    "position": [5.0, 0.0]  # 5 units to the right
+                    "position": [5, 0]  # 5 units to the right
                 },
                 "@obstacle": {
-                    "position": [-3.0, 0.0]  # 3 units to the left
+                    "position": [-3, 0]  # 3 units to the left
                 },
                 "@target_north": {
-                    "position": [0.0, 5.0]  # 5 units up
+                    "position": [0, 5]  # 5 units up
                 }
             },
             "spatial": {
                 "thresholds": {
-                    "near": 2.0,
-                    "far": 10.0
+                    "near": 2,
+                    "far": 10
                 }
             }
         }
@@ -100,8 +100,8 @@ class TestSpatialOperators(unittest.TestCase):
         Robot at (0,0) with vel=[1,1] moving northeast.
         Target at (3,3) northeast → dot = [1,1]·[3,3] = 6 > 0 → True
         """
-        self.context["entities"]["@robot"]["velocity"] = [1.0, 1.0]
-        self.context["entities"]["@diagonal"] = {"position": [3.0, 3.0]}
+        self.context["entities"]["@robot"]["velocity"] = [1, 1]
+        self.context["entities"]["@diagonal"] = {"position": [3, 3]}
         
         evaluator = NoeEvaluator(self.context, mode="strict")
         result = evaluator._apply_binary_op("@robot", "tra", "@diagonal")
@@ -112,8 +112,8 @@ class TestSpatialOperators(unittest.TestCase):
         Robot at (0,0) with vel=[1,1] moving northeast.
         Obstacle at (-2,-2) southwest → dot = [1,1]·[-2,-2] = -4 < 0 → True (away)
         """
-        self.context["entities"]["@robot"]["velocity"] = [1.0, 1.0]
-        self.context["entities"]["@southwest"] = {"position": [-2.0, -2.0]}
+        self.context["entities"]["@robot"]["velocity"] = [1, 1]
+        self.context["entities"]["@southwest"] = {"position": [-2, -2]}
         
         evaluator = NoeEvaluator(self.context, mode="strict")
         result = evaluator._apply_binary_op("@robot", "fra", "@southwest")
