@@ -171,8 +171,6 @@ Full list: [docs/error_codes.md](docs/error_codes.md)
 | `mek` | Action (do) | `mek @release_pallet` |
 | `men` | Audit action (log) | `men @safety_check` |
 
-Full grammar: [NIP-005](nips/nip_005.md)
-
 <br />
 
 ## Liability Infrastructure
@@ -262,8 +260,6 @@ flowchart TD
     style E fill:#d73a49,stroke:#d73a49,stroke-width:2px,color:#fff
     style F fill:#6f42c1,stroke:#6f42c1,stroke-width:2px,color:#fff
 ```
-
-[Full architecture specs →](nips/nip_005.md)
 
 <br />
 
