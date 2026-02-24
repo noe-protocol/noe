@@ -3,7 +3,7 @@
 Demo Artifact Generator
 ========================
 
-Produces a canonical decision object artifact for Gianluca demo.
+Produces a canonical decision object artifact for a demo.
 Captures: canonical_chain, context_hash, domain_pack_hash, provenance.
 """
 
