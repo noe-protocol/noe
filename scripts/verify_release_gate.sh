@@ -12,7 +12,7 @@ echo ""
 echo "Running core verification tests..."
 python3 -m pytest -q \
   tests/test_v1_0_verification.py \
-  tests/test_anti_axiom_security.py \
+  tests/adversarial/test_anti_axiom_security.py \
   tests/test_safety_kernel_invariants.py \
   tests/test_spatial_operators.py \
   tests/test_strict_actions.py \
