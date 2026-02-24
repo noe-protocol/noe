@@ -44,6 +44,21 @@ cd examples/auditor_demo
 
 <br />
 
+### Common Commands
+
+```bash
+make test          # Unit tests (43 tests)
+make conformance   # NIP-011 conformance vectors (60/60)
+make guard         # Robot guard golden-vector demo (7 ticks)
+make demo          # Full auditor demo (shipment + hallucination + multi-agent)
+make bench         # ROS bridge overhead benchmark
+make all           # Run everything
+make help          # Show all available targets
+```
+
+<br />
+
+
 ## Why Noe?
 
 Modern autonomous systems fail for predictable reasons. Noe solves the "Black Box" liability problem.
