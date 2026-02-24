@@ -45,7 +45,7 @@ echo "[3] Running Release Gate Verification..."
 ./scripts/verify_release_gate.sh
 echo ""
 
-# 4. Generate Canonical Artifact (For Gianluca)
+# 4. Generate Canonical Artifact
 echo "[4] Generating v1.0 Canonical Artifact..."
 python3 generate_demo_artifact.py
 echo ""
