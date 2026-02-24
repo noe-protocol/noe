@@ -1,46 +1,95 @@
 # Noe
 
-**A Deterministic Decision Kernel for Autonomous Systems.**
+**A deterministic decision kernel for autonomous systems.**
 
-Noe acts as a deterministic decision enforcement boundary between untrusted proposers (humans, LLMs, planners) and critical actuators for embodied AI. Unlike probabilistic models, Noe evaluates each proposal to either a truth value (**True/False/Undefined**) or a typed **Error**. Only **True** can permit execution. False, Undefined, and Error are all non-execution and are distinguishable in the provenance record.
+Noe is an **enforcement boundary** between *untrusted proposers* (humans, LLMs, planners) and *critical actuators* (robots, industrial automation). A proposer suggests an action; Noe evaluates a small, deterministic policy chain against a frozen, grounded context (`C_safe`) and returns either:
 
-**Scope:** Noe gates decisions; it is not a control loop. In production, Noe evaluates guard conditions and blocks unsafe actions, but a lower-level reflex controller must handle the "blocked" state safely.
+- **`list[action]`** → permitted (action proposal emitted)
+- **`undefined`** → condition not satisfied / guard fell through (no-op)
+- **`error`** → strict-mode violation, e.g. `ERR_EPISTEMIC_MISMATCH`, `ERR_CONTEXT_STALE` (refusal; reason recorded in certificate when provenance is enabled)
 
-> ⚠️ **Fail-Stop Model:** Noe blocks unsafe actions but does NOT guarantee liveness. Safe for deliberative planning with reflex layers. Unsafe as sole control for flight systems, rockets, or high-speed vehicles without fallback controllers.
+Only an emitted action is eligible for execution. **`undefined` and `error` are both non-execution**, and are distinguishable in the provenance record. `undefined` is a benign fall-through; `error` is a strict-mode contract violation worth alerting on.
 
-Given the same **chain + registry + semantics + C_safe**, every valid Noe chain has:
-
-* **Exactly one parse**
-* **Exactly one meaning** (AST + operator semantics)
-* **Exactly one evaluation outcome** across compliant runtimes
+**Scope:** Noe gates discrete, safety-relevant decisions. It is **not** a control loop. A downstream supervisor/reflex layer must implement the configured fallback (hold/slow/stop).
 
 <br />
 
-## Quick Start & Demo
+**Contents:** 
+1. [Why Noe exists](#why-noe-exists)
+2. [Determinism and replay](#determinism-and-replay)
+3. [Quick Start](#quick-start)
+4. [Certificates](#what-a-certificate-looks-like)
+5. [Error codes](#representative-strict-mode-error-codes)
+6. [Operator cheat sheet](#operator-cheat-sheet)
+7. [Liability Infrastructure](#liability-infrastructure)
+8. [Determinism Contract](#determinism-contract-integer-only)
+9. [Architecture](#architecture)
+10. [Docs](#documentation)
 
-### Run the Auditor Demo
+<br />
 
-Verify the simulated cryptographic ledger, fail-stop behavior, and tamper detection in under 10 seconds.
+## Why Noe exists
+
+Most autonomy failures become liability failures because the system cannot prove **what it knew**, **what it decided**, and **why**. Noe turns "why did it move?" into a **replayable evidence object**: the chain, the grounded context snapshot, and a deterministic verdict with hash commitments.
+
+| Problem | Traditional Approach | **Noe Solution** |
+|---------|---------------------|------------------|
+| **Ambiguous conditionals** | Ad-hoc Python `if` statements | Deterministic grammar |
+| **Stale sensor data** | Silent failures / race conditions | Explicit error codes (`ERR_*`) |
+| **Beliefs treated as facts** | Implicit assumptions | Grounded epistemics (`knowledge` vs `belief`) |
+| **LLM hallucinations** | Hope-based validation | Untrusted proposer model (no action unless permitted) |
+| **Incident investigation** | "The AI messed up" (unprovable) | Evidence generation (SHA-256 provenance record) |
+
+<br />
+
+## Determinism and replay
+
+Given the same **chain + registry + semantics + `C_safe`**, any conformance-passing runtime ([NIP-011](tests/nip011/), `noe-canonical-v1`) produces:
+
+- exactly one parse,
+- exactly one meaning,
+- exactly one evaluation outcome (bit-identical for normative commitments).
+
+Noe enforces an **integer-only** contract for all normative commitments — every `*_hash` field is float-free. Floats are permitted in observational context snapshots. Sensor/planner adapters must quantize at the boundary before projection (`π_safe`).
+
+`π_safe` is a deterministic projection: it prunes stale inputs, applies grounding thresholds, and emits the minimal `C_safe` that the evaluator is allowed to see. Hysteresis/debounce belongs in the grounding adapter (pre-`π_safe`); Noe only consumes the grounded predicate membership.
+
+<br />
+
+## Quick Start
 
 ```bash
-# 1. Install dependencies
-pip install -r requirements.txt
-
-# 2. Run the full verification suite (Unit + Conformance)
-./run_demo.sh
-
-# 3. Run the Liability Machine Proof (Auditor Demo)
-cd examples/auditor_demo
-./run_demo.sh
+git clone https://github.com/noe-protocol/noe.git
+cd noe
+pip install -e .          # Python ≥3.10
 ```
 
-**What this proves:**
+```bash
+make demo                 # Fast path: auditor demo (shipment + hallucination + multi-agent)
+make all                  # Full suite: tests + conformance + demos + benchmarks
+```
 
-1. **Bit-identical determinism:** Replay produces identical hashes.
-2. **Fail-Stop safety:** Stale sensors (>5s old) cause automatic refusal.
-3. **Tamper Evidence:** Modifying the history breaks the cryptographic seal.
+<br />
 
-**[👉 Read the full Auditor Demo Walkthrough](examples/auditor_demo/README.md)**
+## One-minute example
+
+```
+shi @human_present khi sek mek @stop sek nek
+```
+
+- `shi` = knowledge check
+- `khi` = guard (if…then)
+- `sek` = clause separator
+- `mek` = action verb
+- `nek` = chain terminator
+
+Identifiers like `@human_present` and `@stop` are **registry keys** (see `noe/registry.json`); they map domain names to expected literals/actions and are part of what makes evaluation deterministic. The registry fixes identifier types (literal vs action), preventing "same glyph, different meaning" drift across agents.
+
+- If `@human_present` is grounded **true** in `C_safe.modal.knowledge` → emits `mek @stop`
+- If grounded **false** → `undefined` (no-op)
+- If missing/ungrounded in strict mode → `error: ERR_EPISTEMIC_MISMATCH` (refusal; reason recorded in certificate when provenance is enabled)
+
+**[Full Auditor Demo Walkthrough](examples/auditor_demo/README.md)**
 
 <br />
 
@@ -50,34 +99,85 @@ cd examples/auditor_demo
 make test          # Unit tests (43 tests)
 make conformance   # NIP-011 conformance vectors (60/60)
 make guard         # Robot guard golden-vector demo (7 ticks)
-make demo          # Full auditor demo (shipment + hallucination + multi-agent)
+make demo          # Full auditor demo
 make bench         # ROS bridge overhead benchmark
 make all           # Run everything
 make help          # Show all available targets
 ```
 
+**In practice:** Planners/LLMs propose → Noe gates → ROS2/controllers execute.
+
 <br />
 
+### What a certificate looks like
 
-## Why Noe?
+Every decision produces a JSON certificate with hash commitments. Example (truncated):
 
-Modern autonomous systems fail for predictable reasons. Noe solves the "Black Box" liability problem.
+```json
+{
+  "noe_version": "v1.0-rc1",
+  "chain": "shi @temperature_ok an shi @human_clear khi sek mek @release_pallet sek nek",
+  "context_hashes": {
+    "root":   "4802862d...4d74",
+    "domain": "8d84e2f1...3c90",
+    "local":  "f83bb963...7264",
+    "safe":   "4b766825...dbbf"
+  },
+  "outcome": {
+    "domain": "list",
+    "value": [{
+      "type": "action",
+      "verb": "mek",
+      "target": "@release_pallet",
+      "action_hash": "3031cedd...f00b"
+    }]
+  }
+}
+```
 
-| Problem | Traditional Approach | **Noe Solution** |
-|---------|---------------------|------------------|
-| **Ambiguous conditionals** | Ad-hoc Python `if` statements | ✅ **Deterministic grammar** |
-| **Stale sensor data** | Silent failures / Race conditions | ✅ **Explicit error codes (`ERR_*`)** |
-| **Beliefs treated as facts** | Implicit assumptions | ✅ **Grounded epistemics** (`knowledge` vs `belief`) |
-| **LLM hallucinations** | Hope-based validation | ✅ **Untrusted proposer model** (Undefined ⇒ Block) |
-| **Agent liability** | "The AI messed up" (Unprovable) | ✅ **Provenance record** (SHA-256 Audit Log) |
+An auditor can replay: freeze the context, re-evaluate the chain, and verify the hashes match. See a full example at [shipment_certificate_strict.json](examples/auditor_demo/shipment_certificate_strict.json).
 
-**In practice:** Planners/LLMs propose → Noe gates → ROS2/controllers execute.
+Store certificates in an append-only log; auditors verify by recomputing `context_hashes.safe` and replaying the chain against `context_snapshot.safe`.
+
+<br />
+
+### Representative strict-mode error codes
+
+| Code | Meaning | Supervisor action |
+|------|---------|-------------------|
+| `ERR_CONTEXT_STALE` | Sensor data exceeds staleness threshold | Refresh context, retry |
+| `ERR_EPISTEMIC_MISMATCH` | Chain claims knowledge not in context | Check sensor pipeline |
+| `ERR_ACTION_MISUSE` | Action verb outside guarded block | Fix chain structure |
+| `ERR_LITERAL_MISSING` | `@literal` not in context shard | Populate `C.literals` |
+| `ERR_BAD_CONTEXT` | Context is null/array/malformed | Fix context construction |
+| `ERR_CONTEXT_INCOMPLETE` | Required shard missing (temporal, modal, etc.) | Add missing shard |
+
+Full list: [docs/error_codes.md](docs/error_codes.md)
+
+<br />
+
+### Operator cheat sheet
+
+| Operator | Role | Example |
+|----------|------|---------|
+| `shi` | Knowledge check ("I know X") | `shi @door_open` |
+| `vek` | Belief check ("I believe X") | `vek @path_clear` |
+| `an` | Conjunction (AND) | `shi @a an shi @b` |
+| `ur` | Disjunction (OR) | `shi @a ur shi @b` |
+| `nai` | Negation (NOT) | `nai (shi @danger)` |
+| `khi` | Guard (if…then) | `shi @safe khi sek mek @go sek nek` |
+| `sek` | Clause separator | `sek mek @action sek` |
+| `nek` | Chain terminator | `... sek nek` |
+| `mek` | Action (do) | `mek @release_pallet` |
+| `men` | Audit action (log) | `men @safety_check` |
+
+Full grammar: [NIP-005](nips/nip_005.md)
 
 <br />
 
 ## Liability Infrastructure
 
-Noe makes agent decisions replayable and auditable. For each proposal, it produces a deterministic verdict plus an integrity-protected record. This supports incident investigation, compliance workflows, and insurer-grade logging.
+Noe makes agent decisions replayable and auditable. For each proposal, it produces a deterministic verdict plus an integrity-protected record. This supports incident investigation, compliance workflows, and audit-grade evidence.
 
 **What Noe provides:**
 
@@ -109,11 +209,13 @@ This turns LLMs into **Untrusted Proposers**, preventing hallucinations from bec
 
 <br />
 
-## 🔒 Determinism Contract (Integer-Only)
+## Determinism Contract (Integer-Only)
 
 **Reality:** Upstream sensors and planners emit floats (`1.23456`).
-**Problem:** Floats are non-deterministic across architectures (x86 vs ARM).
-**Noe Solution:** `C_safe` contains **only canonical int64 values**.
+
+**Problem:** Floats are banned from `*_hash` inputs because cross-language canonicalization and NaN/Infinity representations break portable hashing.
+
+**Noe Solution:** `C_safe` is **int-only**; richer context layers (`C_rich`) may contain floats.
 
 **Quantization Boundary:**
 Sensor adapters MUST quantize floats → int64 **before** submitting to `π_safe`.
@@ -131,7 +233,7 @@ Noe is opinionated. We prioritize **Liability Management** over flexibility.
 
 1. **"Modal Logic Theatre" (The Threshold Attack)**
    * *Critique:* "You are redefining 'Knowledge' as simply 'High Confidence'."
-   * *Defense:* **Correct.** Noe does not solve Truth; it solves **Standard of Care**. By enforcing an explicit high threshold for `shi`, Noe provides a mathematically provable standard of care for legal defense.
+   * *Defense:* **Correct.** Noe does not solve Truth; it solves **Standard of Care**. By enforcing an explicit high threshold for `shi`, Noe provides a mathematically provable standard of care for post-incident defensibility.
 
 2. **"The Latency Tax"**
    * *Critique:* "Cryptography is too slow for 1kHz loops."
@@ -149,7 +251,7 @@ Noe is opinionated. We prioritize **Liability Management** over flexibility.
 flowchart TD
     A["Untrusted Inputs<br/>(Humans, LLMs, Planners)"] --> B["Noe Parser + Static Validator<br/>(Syntax + Registry + Operator-class Checks)"]
     B --> C["Noe Context Manager + Runtime Validator<br/>(C_rich → π_safe → C_safe + Grounding + Staleness + Epistemics)"]
-    C --> D["Noe Interpreter<br/>(K3 Logic: True / False / Undefined)"]
+    C --> D["Noe Interpreter<br/>(K3 semantics + typed errors)"]
     D --> E["Actuators<br/>(Actions fire only on True)"]
     D -.-> F["Provenance Record<br/>(decision object, hashes, deterministic replay)"]
     
@@ -177,9 +279,6 @@ nips/                   # Specification documents (NIP-005, 009, 010)
 <br />
 
 ## Documentation
-
-* **[NIP-005: Core Semantics](nips/nip_005.md)** - Grammar + K3 logic
-* **[NIP-009: Context Model](nips/nip_009.md)** - `C_root`, `C_domain`, `C_local`
 * **[NIP-011: Conformance](tests/nip011/)** - 60/60 vectors passing
 * **[ROS 2 Integration Pattern](docs/ros2_integration_example.md)** - Architecture guide
 
