@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "noe-runtime"
+version = "1.0.0"
+description = "Noe: deterministic policy runtime for agent/robot action gating with grounded context and replayable provenance"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "The Noe Foundation" }]
+keywords = ["robotics", "agents", "policy", "safety", "auditability", "logic", "provenance"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Interpreters",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = ["arpeggio>=2.0.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/noe-protocol/noe"
+Repository = "https://github.com/noe-protocol/noe"
+Documentation = "https://github.com/noe-protocol/noe/tree/main/docs"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["noe*"]
+exclude = ["tests*", "benchmarks*", "examples*"]
