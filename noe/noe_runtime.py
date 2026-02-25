@@ -210,7 +210,7 @@ class NoeRuntime:
                     value=None,
                     error=new_err,
                     context_hash=snap.context_hash,
-                    snapshot_ts=snap.timestamp_ms,
+                    snapshot_ts=getattr(snap, 'timestamp_ms', 0),
                     raw_ast=None,
                     canonical_chain=chain,
                     provenance=None,
@@ -282,7 +282,7 @@ class NoeRuntime:
                     return self._apply_safety_handler(chain, snap, prelim)
             
             # Stale context handling (strict mode)
-            if snap.is_stale and self.strict_mode:
+            if getattr(snap, 'is_stale', False) and self.strict_mode:
                 prelim = self._error("ERR_CONTEXT_STALE", snap)
                 prelim.canonical_chain = chain
                 return self._apply_safety_handler(chain, snap, prelim)
@@ -405,7 +405,7 @@ class NoeRuntime:
                     value=None,
                     error=None,
                     context_hash=snap.context_hash,
-                    snapshot_ts=snap.timestamp_ms,
+                    snapshot_ts=getattr(snap, 'timestamp_ms', 0),
                     raw_ast=ast if self.debug else None,
                     canonical_chain=chain,
                     provenance=None,
@@ -469,7 +469,7 @@ class NoeRuntime:
                 value=value,
                 error=None,
                 context_hash=snap.context_hash,
-                snapshot_ts=snap.timestamp_ms,
+                snapshot_ts=getattr(snap, 'timestamp_ms', 0),
                 raw_ast=ast if self.debug else None,
                 canonical_chain=chain,
                 provenance=prov_data,
@@ -536,7 +536,7 @@ class NoeRuntime:
     def _undefined(self, msg: str, snap: Optional[ContextSnapshot], canonical_chain: Optional[str]=None) -> RuntimeResult:
         """Return undefined-domain result."""
         ctx_hash = snap.context_hash if snap else "UNKNOWN"
-        ts = snap.timestamp_ms if snap else 0
+        ts = getattr(snap, 'timestamp_ms', 0) if snap else 0
         return RuntimeResult(
             domain="undefined",
             value=None,
@@ -551,7 +551,7 @@ class NoeRuntime:
     def _error(self, msg: str, snap: Optional[ContextSnapshot], canonical_chain: Optional[str]=None) -> RuntimeResult:
         """Return error-domain result."""
         ctx_hash = snap.context_hash if snap else "UNKNOWN"
-        ts = snap.timestamp_ms if snap else 0
+        ts = getattr(snap, 'timestamp_ms', 0) if snap else 0
         return RuntimeResult(
             domain="error",
             value=None,
