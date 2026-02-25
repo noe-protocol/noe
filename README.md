@@ -277,6 +277,7 @@ nips/                   # Specification documents (NIP-005, 009, 010)
 ## Documentation
 * **[NIP-011: Conformance](tests/nip011/)** - 60/60 vectors passing
 * **[ROS 2 Integration Pattern](docs/ros2_integration_example.md)** - Architecture guide
+* **[Canonicalization Proof](tests/test_context_canonicalization.py)** - Order-invariant hashing verified
 
 <br />
 
