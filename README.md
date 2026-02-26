@@ -51,7 +51,7 @@ Given the same **chain + registry + semantics + `C_safe`**, any conformance-pass
 - exactly one meaning,
 - exactly one evaluation outcome (bit-identical for normative commitments).
 
-Noe enforces an **integer-only** contract for all normative commitments — every `*_hash` field is float-free. Floats are permitted in observational context snapshots. Sensor/planner adapters must quantize at the boundary before projection (`π_safe`).
+Noe enforces an **integer-only** contract for all normative commitments - every `*_hash` field is float-free. Floats are permitted in observational context snapshots. Sensor/planner adapters must quantize at the boundary before projection (`π_safe`).
 
 `π_safe` is a deterministic projection: it prunes stale inputs, applies grounding thresholds, and emits the minimal `C_safe` that the evaluator is allowed to see. Hysteresis/debounce belongs in the grounding adapter (pre-`π_safe`); Noe only consumes the grounded predicate membership.
 
@@ -65,10 +65,33 @@ Noe enforces an **integer-only** contract for all normative commitments — ever
 
 **Requirements**
 - Python 3.11 recommended (3.10 supported)
-- macOS or Linux
+- macOS, Linux, or Windows (via WSL2 recommended)
 - `make` installed
+- On Windows, use WSL2 for a Linux-native dev environment (recommended).
 
 ```bash
+git clone https://github.com/noe-protocol/noe.git
+cd noe
+
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+python -m pip install --upgrade pip
+python -m pip install ".[dev]"
+
+make conformance
+make demo
+make all
+```
+<br />
+
+### Windows (recommended): WSL2 / Ubuntu
+```
+# 1) Install WSL2 + Ubuntu, then open an Ubuntu terminal
+# 2) Install build tools
+sudo apt update
+sudo apt install -y make git python3.11 python3.11-venv python3-pip
+
 git clone https://github.com/noe-protocol/noe.git
 cd noe
 
@@ -126,7 +149,7 @@ shi @human_present ur shi @e_stop_pressed khi sek mek @stop sek nek
 - `ur` = disjunction (OR)
 - If **either** `shi @human_present` **or** `shi @e_stop_pressed` is grounded **true** in `C_safe` → emits `mek @stop`
 - If **both** are grounded **false** → `undefined` (no-op)
-- If a required predicate is missing/ungrounded in strict mode → `error` (strict-mode contract rejection)
+- If a predicate is missing/ungrounded in strict mode → `error` (strict-mode contract rejection)
 
 Propagation rules for `ur` over `undefined` are normative in **NIP-005**.
 
@@ -326,6 +349,26 @@ flowchart TD
     style E fill:#d73a49,stroke:#d73a49,stroke-width:2px,color:#fff
     style F fill:#6f42c1,stroke:#6f42c1,stroke-width:2px,color:#fff
 ```
+
+<br />
+
+## Implementation Status
+
+This repository contains the **Python reference implementation** (an executable specification) optimized for semantic clarity, testability, and spec conformance.
+
+- **Reference implementation:** Python 3.11+
+- **Conformance:** NIP-011 vectors (60/60) are normative
+- **Portability contract:** Any compliant runtime (Rust/C++/Zig/etc.) MUST match:
+  - parse + evaluation outcomes for all NIP-011 vectors
+  - hash commitments and certificates for normative fields
+
+The proposer (LLM/planner) is not trusted; only conformance-passing runtimes are trusted to evaluate and emit actions.
+
+**Porting targets (planned):**
+- [ ] **Rust core runtime** - high-assurance, portable embedding
+- [ ] **C++20 runtime / header-only adapter layer** - ROS 2 and industrial integration
+
+If you are implementing a new runtime, start with `tests/nip011/` and treat the manifest as the source of truth.
 
 <br />
 
