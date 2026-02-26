@@ -11,9 +11,8 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from noe.noe_runtime import NoeRuntime
-from noe.noe_parser import ContextManager, merge_layers_for_validation
-
+from noe import NoeRuntime, ContextManager
+from noe.noe_parser import merge_layers_for_validation
 
 class TestAntiAxiomSecurity:
     """Prevent silent default fabrication that could bypass strict mode."""
