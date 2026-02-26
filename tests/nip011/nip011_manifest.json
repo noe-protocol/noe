@@ -135,7 +135,7 @@
         "count": 3
     },
     "nip011_audit.json": {
-        "sha256": "7196db2001482cc1f1a070a32feb894ee19d317ed93af7af74ede0e57ec6db83",
+        "sha256": "7c6251c32972c1de55415a6ac6780a9465d2702b5152282a9599674715877fd5",
         "test_ids": [
             "AUD_001",
             "AUD_002"
@@ -150,7 +150,7 @@
         "count": 1
     },
     "nip011_adversarial.json": {
-        "sha256": "2fc5631d138ab1c6259ba0e186dc6c93ed1d26a74117c0a7d99ced8e953a373a",
+        "sha256": "f6a65e2e50d4c351817631a7bea71b62b2cd7e7863127f57bdf02d2149721eb7",
         "test_ids": [
             "ADV_001",
             "ADV_002",
