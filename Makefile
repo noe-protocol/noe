@@ -5,7 +5,8 @@
 
 # ─── Core Test Suites ────────────────────────────────────────────────
 
-test:                          ## Run all unit tests
+test:
+	pip install ".[dev]"
 	python3 -m unittest discover tests
 
 conformance:                   ## Run NIP-011 conformance suite (60 vectors)
