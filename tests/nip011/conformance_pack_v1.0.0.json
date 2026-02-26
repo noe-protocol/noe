@@ -42,7 +42,7 @@
       "vectors": 14
     },
     "nip011_spatial.json": {
-      "sha256": "a8b4dc44a5d9283c130c34653574bb1d179f79416de323b77a38f270172968cf",
+      "sha256": "a0357ab5027b9f37cae1de9c4bcb24a2096bca8723c87853908db4a36789e1e7",
       "vectors": 2
     },
     "nip011_staleness.json": {
@@ -50,7 +50,7 @@
       "vectors": 4
     },
     "nip011_strict_actions.json": {
-      "sha256": "f227f696b371a9359165017eed34826b6e86ada7b673b618e9db9291a85bc231",
+      "sha256": "9465fd4caa3206f1a1299168ac2bd36c7ccfbcd142fe166d103d1c5be1fcb514",
       "vectors": 2
     },
     "nip011_ungrounded.json": {
