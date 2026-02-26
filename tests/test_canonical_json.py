@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 """
-Canonical JSON micro-tests - verify RFC 8785 compliance for tricky objects.
+Canonical JSON micro-tests — verify RFC 8785 compliance for tricky objects.
 
-These tests assert the exact canonical bytes to catch any JSON library drift.
+Asserts exact canonical bytes to catch any JSON library drift.
 """
 
 import json
 import hashlib
 
+
 def canonical_json_bytes(obj):
     """
     Generate canonical JSON bytes using Python's json module.
-    
+
     RFC 8785 requirements:
     - Keys sorted lexicographically
     - No whitespace: separators=(',', ':')
@@ -27,84 +28,54 @@ def canonical_json_bytes(obj):
     ).encode('utf-8')
 
 
-def test_canonical_json():
-    """Test canonical JSON serialization for edge cases."""
-    
-    tests = [
-        {
-            "name": "Empty object",
-            "obj": {},
-            "expected_bytes": b'{}',
-            "expected_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
-        },
-        {
-            "name": "Key ordering",
-            "obj": {"z": 1, "a": 2, "m": 3},
-            "expected_bytes": b'{"a":2,"m":3,"z":1}',
-            "expected_sha256": "7c9c8de73e2d7e1c5a3b8a9e1c2e7d3e5b5a9e1c2e7d3e5b5a9e1c2e7d3e5b5a"  # placeholder - will update
-        },
-        {
-            "name": "No whitespace",
-            "obj": {"key": "value"},
-            "expected_bytes": b'{"key":"value"}',
-            "expected_sha256": None  # will compute
-        },
-        {
-            "name": "Nested objects",
-            "obj": {"outer": {"inner": "value"}},
-            "expected_bytes": b'{"outer":{"inner":"value"}}',
-            "expected_sha256": None
-        },
-        {
-            "name": "Boolean true/false",
-            "obj": {"t": True, "f": False},
-            "expected_bytes": b'{"f":false,"t":true}',
-            "expected_sha256": None
-        },
-        {
-            "name": "Integer (no decimal)",
-            "obj": {"num": 42},
-            "expected_bytes": b'{"num":42}',
-            "expected_sha256": None
-        },
-        {
-            "name": "Unicode escape",
-            "obj": {"emoji": "🎉"},
-            "expected_bytes": b'{"emoji":"\\ud83c\\udf89"}',  # ensure_ascii=True
-            "expected_sha256": None
-        }
-    ]
-    
-    print("Canonical JSON Micro-Tests")
-    print("=" * 50)
-    
-    passed = 0
-    failed = 0
-    
-    for test in tests:
-        canonical_bytes = canonical_json_bytes(test["obj"])
-        sha256 = hashlib.sha256(canonical_bytes).hexdigest()
-        
-        # Check bytes match
-        if canonical_bytes != test["expected_bytes"]:
-            print(f"✗ {test['name']}: FAIL")
-            print(f"  Expected: {test['expected_bytes']}")
-            print(f"  Got:      {canonical_bytes}")
-            failed += 1
-        else:
-            print(f"✓ {test['name']}: PASS")
-            passed += 1
-            
-        # Print SHA-256 for reference
-        print(f"  SHA-256: {sha256}")
-    
-    print("=" * 50)
-    print(f"Passed: {passed}/{len(tests)}")
-    
-assert failed == 0, f"{failed} canonical JSON tests failed"
+CASES = [
+    ("{}", {}, b'{}'),
+    ("key ordering", {"z": 1, "a": 2, "m": 3}, b'{"a":2,"m":3,"z":1}'),
+    ("no whitespace", {"key": "value"}, b'{"key":"value"}'),
+    ("nested objects", {"outer": {"inner": "value"}}, b'{"outer":{"inner":"value"}}'),
+    ("boolean true/false", {"t": True, "f": False}, b'{"f":false,"t":true}'),
+    ("integer (no decimal)", {"num": 42}, b'{"num":42}'),
+    ("unicode escape", {"emoji": "🎉"}, b'{"emoji":"\\ud83c\\udf89"}'),
+]
+
+# Frozen SHA-256 for stability proof (computed once, asserted forever)
+KNOWN_HASHES = {
+    "{}": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+}
 
 
-if __name__ == "__main__":
-    import sys
-    success = test_canonical_json()
-    sys.exit(0 if success else 1)
+def test_canonical_bytes():
+    """Each object must serialize to the exact expected bytes."""
+    for name, obj, expected in CASES:
+        canonical = canonical_json_bytes(obj)
+        assert canonical == expected, (
+            f"{name}: bytes mismatch\n"
+            f"  expected={expected!r}\n"
+            f"  got     ={canonical!r}"
+        )
+
+
+def test_canonical_hashes():
+    """Frozen SHA-256 values must remain stable across runs."""
+    for name, obj, _ in CASES:
+        if name in KNOWN_HASHES:
+            h = hashlib.sha256(canonical_json_bytes(obj)).hexdigest()
+            assert h == KNOWN_HASHES[name], (
+                f"{name}: SHA-256 mismatch\n"
+                f"  expected={KNOWN_HASHES[name]}\n"
+                f"  got     ={h}"
+            )
+
+
+def test_nan_rejected():
+    """NaN must raise ValueError (allow_nan=False)."""
+    import pytest
+    with pytest.raises(ValueError):
+        canonical_json_bytes({"x": float('nan')})
+
+
+def test_inf_rejected():
+    """Inf must raise ValueError (allow_nan=False)."""
+    import pytest
+    with pytest.raises(ValueError):
+        canonical_json_bytes({"x": float('inf')})
