@@ -292,9 +292,25 @@ class NoeRuntime:
                 from .noe_validator import validate_context_strict
                 is_valid, err_msg = validate_context_strict(snap.structured)
                 if not is_valid:
-                    prelim = self._error(f"ERR_BAD_CONTEXT", snap, canonical_chain=chain)
-                    prelim.value = err_msg
+                    prelim = self._bad_context(snap, chain, err_msg)
                     return self._apply_safety_handler(chain, snap, prelim)
+
+                # Preflight: required context fields must be present and well-typed
+                root = snap.structured.get("root", {})
+                if isinstance(root, dict):
+                    missing = []
+                    temporal = root.get("temporal", None)
+                    if not isinstance(temporal, dict):
+                        missing.append("root.temporal")
+                    spatial = root.get("spatial", None)
+                    if isinstance(spatial, dict):
+                        if not isinstance(spatial.get("thresholds", None), dict):
+                            missing.append("root.spatial.thresholds")
+                    elif spatial is not None:
+                        missing.append("root.spatial")
+                    if missing:
+                        prelim = self._bad_context(snap, chain, missing)
+                        return self._apply_safety_handler(chain, snap, prelim)
             
             # 3. Parse (Moved up for AST validation)
             try:
@@ -311,7 +327,7 @@ class NoeRuntime:
                 from threshold_safety_validator import validate_threshold_safety
                 
                 # Validate threshold safety against NIP-016 floors
-                is_safe, threshold_errors = validate_threshold_safety(snap.merged)
+                is_safe, threshold_errors = validate_threshold_safety(getattr(snap, 'merged', snap.structured))
                 
                 if not is_safe and self.strict_mode:
                     # In strict mode, unsafe thresholds are a hard error
@@ -332,7 +348,7 @@ class NoeRuntime:
             from .noe_validator import validate_ast_safety
 
             
-            flat_ctx = snap.merged
+            flat_ctx = getattr(snap, 'merged', snap.structured)
             val_res = validate_chain(chain, flat_ctx, mode="strict" if self.strict_mode else "partial")
             
             if not val_res["ok"]:
@@ -562,6 +578,20 @@ class NoeRuntime:
             canonical_chain=canonical_chain,
             provenance=None,
         )
+
+    def _bad_context(self, snap: Optional[ContextSnapshot], canonical_chain: str, missing) -> RuntimeResult:
+        """Return ERR_BAD_CONTEXT with machine-readable missing fields."""
+        if isinstance(missing, list):
+            detail = ", ".join(missing)
+        else:
+            detail = str(missing)
+        msg = f"ERR_BAD_CONTEXT: missing required fields: {detail}"
+        rr = self._error(msg, snap, canonical_chain=canonical_chain)
+        try:
+            rr.missing = missing if isinstance(missing, list) else [str(missing)]
+        except Exception:
+            pass
+        return rr
 
     def evaluate_with_provenance(
         self,
