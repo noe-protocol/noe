@@ -101,12 +101,7 @@ def test_canonical_json():
     print("=" * 50)
     print(f"Passed: {passed}/{len(tests)}")
     
-    if failed > 0:
-        print(f"❌ {failed} tests FAILED")
-        return False
-    else:
-        print("✅ All canonical JSON tests PASSED")
-        return True
+assert failed == 0, f"{failed} canonical JSON tests failed"
 
 
 if __name__ == "__main__":
