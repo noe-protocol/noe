@@ -8,7 +8,7 @@ Noe is an **enforcement boundary** between *untrusted proposers* (humans, LLMs, 
 - **`undefined`** → condition not satisfied / guard fell through (no-op)
 - **`error`** → strict-mode violation, e.g. `ERR_EPISTEMIC_MISMATCH`, `ERR_CONTEXT_STALE` (refusal; reason recorded in certificate when provenance is enabled)
 
-Only an emitted action is eligible for execution. **`undefined` and `error` are both non-execution**, and are distinguishable in the provenance record. `undefined` is a benign fall-through; `error` is a strict-mode contract violation worth alerting on.
+Only an emitted action is eligible for execution. **`undefined` and `error` are both non-execution**, and are distinguishable in the provenance record. `undefined` is a benign fall-through (expected); `error` indicates a violated safety contract and should be surfaced to supervision.
 
 **Scope:** Noe gates discrete, safety-relevant decisions. It is **not** a control loop. A downstream supervisor/reflex layer must implement the configured fallback (hold/slow/stop).
 
@@ -58,18 +58,29 @@ Noe enforces an **integer-only** contract for all normative commitments — ever
 
 ## Quick Start
 
+**Requirements**
+- Python 3.11 recommended (3.10 supported)
+- macOS or Linux
+- `make` installed
+
 ```bash
 git clone https://github.com/noe-protocol/noe.git
 cd noe
-pip install -e .          # Python ≥3.10
+
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+pip install --upgrade pip
+pip install .[dev]
+
+make demo
+make all
+
 ```
 
-```bash
-make demo                 # Fast path: auditor demo (shipment + hallucination + multi-agent)
-make all                  # Full suite: tests + conformance + demos + benchmarks
-```
-
+For development workflows, replace `pip install .` with `pip install -e .`.
 <br />
+
 
 ## One-minute example
 
@@ -96,8 +107,8 @@ Identifiers like `@human_present` and `@stop` are **registry keys** (see `noe/re
 ### Common Commands
 
 ```bash
-make test          # Unit tests (43 tests)
-make conformance   # NIP-011 conformance vectors (60/60)
+make test          # Unit tests
+make conformance   # NIP-011 conformance vectors
 make guard         # Robot guard golden-vector demo (7 ticks)
 make demo          # Full auditor demo
 make bench         # ROS bridge overhead benchmark
@@ -250,7 +261,7 @@ flowchart TD
     A["Untrusted Inputs<br/>(Humans, LLMs, Planners)"] --> B["Noe Parser + Static Validator<br/>(Syntax + Registry + Operator-class Checks)"]
     B --> C["Noe Context Manager + Runtime Validator<br/>(C_rich → π_safe → C_safe + Grounding + Staleness + Epistemics)"]
     C --> D["Noe Interpreter<br/>(K3 semantics + typed errors)"]
-    D --> E["Actuators<br/>(Actions fire only on True)"]
+    D --> E["Actuators (Actions fire only when a list[action] is emitted)"]
     D -.-> F["Provenance Record<br/>(decision object, hashes, deterministic replay)"]
     
     style A fill:#333,stroke:#666,stroke-width:2px,color:#fff
