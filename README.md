@@ -108,8 +108,9 @@ Note: `shi @human_present` must be grounded from **attested sensor evidence** (o
 
 ```json
 {
-  "@human_present": { "kind": "literal", "shard": "modal.knowledge", "source": "vision.person_bbox", "threshold": 0.90 },
-  "@stop":          { "kind": "action",  "verb": "mek", "action_class": "safety_stop" }
+  "@human_present":  { "kind": "literal", "shard": "modal.knowledge", "source": "vision.person_bbox", "threshold": 0.90 },
+  "@e_stop_pressed": { "kind": "literal", "shard": "modal.knowledge", "source": "hw.estop" },
+  "@stop":           { "kind": "action",  "verb": "mek", "action_class": "safety_stop" }
 }
 ```
 - If `@human_present` is grounded **true** in `C_safe.modal.knowledge` → emits `mek @stop`
