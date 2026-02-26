@@ -11,8 +11,9 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from noe import NoeRuntime, ContextManager
-from noe.noe_parser import merge_layers_for_validation
+from noe.noe_runtime import NoeRuntime
+from noe.noe_parser import ContextManager, merge_layers_for_validation
+
 
 class TestAntiAxiomSecurity:
     """Prevent silent default fabrication that could bypass strict mode."""
@@ -27,8 +28,8 @@ class TestAntiAxiomSecurity:
         merged_invalid = merge_layers_for_validation(ctx_invalid)
         assert merged_invalid == ctx_invalid
 
-    def test_missing_spatial_thresholds_blocks(self):
-        """Missing spatial.thresholds must return undefined, not silent {}."""
+    def test_missing_spatial_thresholds_is_error(self):
+        """Missing spatial.thresholds in strict mode must return ERR_BAD_CONTEXT, not undefined."""
         context = {
             'root': {
                 'literals': {'@x': True, '@y': True},
@@ -49,10 +50,11 @@ class TestAntiAxiomSecurity:
         chain = '@x dia @y nek'
         rr, _ = rt.evaluate_with_provenance(chain)
 
-        assert rr.domain == "undefined", f"Expected undefined, got {rr.domain}: {rr.value}"
+        assert rr.domain == "error", f"Expected error, got {rr.domain}: {rr.value}"
+        assert "ERR_BAD_CONTEXT" in (rr.error or ""), f"Expected ERR_BAD_CONTEXT, got: {rr.error}"
 
-    def test_missing_temporal_does_not_fabricate(self):
-        """None temporal must not be silently masked by double fallback."""
+    def test_missing_temporal_is_error(self):
+        """None temporal in strict mode must return ERR_BAD_CONTEXT."""
         context = {
             'root': {
                 'literals': {'@test': True},
@@ -73,7 +75,8 @@ class TestAntiAxiomSecurity:
         chain = '@test nek'
         rr, _ = rt.evaluate_with_provenance(chain)
 
-        assert rr.domain in ("literal", "undefined", "error")
+        assert rr.domain == "error", f"Expected error, got {rr.domain}: {rr.value}"
+        assert "ERR_BAD_CONTEXT" in (rr.error or ""), f"Expected ERR_BAD_CONTEXT, got: {rr.error}"
 
     def test_no_phantom_defaults_in_validation_merge(self):
         """Validation merge must not seed phantom default shards."""
@@ -116,6 +119,7 @@ class TestAntiAxiomSecurity:
         assert full_result.domain == "truth"
         assert full_result.value == True
 
+        # Delete spatial.thresholds — must now be ERR_BAD_CONTEXT, not True
         partial_context = {
             'root': {
                 'literals': {'@safe': True},
@@ -135,7 +139,9 @@ class TestAntiAxiomSecurity:
 
         partial_result, _ = rt2.evaluate_with_provenance(chain)
 
-        assert partial_result.domain == "truth"
+        # With missing spatial.thresholds, strict mode must refuse
+        assert partial_result.domain == "error", f"Expected error after deletion, got {partial_result.domain}"
+        assert "ERR_BAD_CONTEXT" in (partial_result.error or ""), f"Expected ERR_BAD_CONTEXT, got: {partial_result.error}"
 
 
 if __name__ == "__main__":
