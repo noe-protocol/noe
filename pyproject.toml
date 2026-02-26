@@ -24,10 +24,15 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
-dependencies = ["arpeggio>=2.0.0"]
+dependencies = [
+    "arpeggio>=2.0.0",
+]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0.0", "pytest-cov>=4.0.0"]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/noe-protocol/noe"
