@@ -645,7 +645,21 @@ def validate_chain(
             # NIP-009: Keys in literals shard should be without @.
             canon_key = canonical_literal_key(raw_lit)
             literals_shard = C_total.get("literals", {})
-            
+
+            # Guard: literals shard must be a dict, not None or other type
+            if literals_shard is None:
+                if mode == "strict":
+                    flags["schema_invalid"] = True
+                    errors.append({"code": "ERR_CONTEXT_INCOMPLETE", "detail": "context.literals is missing or null"})
+                    reasons.append("context.literals is missing or null")
+                literals_shard = {}
+            elif not isinstance(literals_shard, dict):
+                if mode == "strict":
+                    flags["schema_invalid"] = True
+                    errors.append({"code": "ERR_BAD_CONTEXT", "detail": f"context.literals must be an object, got {type(literals_shard).__name__}"})
+                    reasons.append(f"context.literals must be an object, got {type(literals_shard).__name__}")
+                literals_shard = {}
+
             # Check for key existence (canon or raw)
             if canon_key not in literals_shard and raw_lit not in literals_shard:
                  if _DEBUG_ENABLED: print(f"DEBUG: LITERAL MISSING '{raw_lit}'")
