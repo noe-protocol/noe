@@ -78,7 +78,7 @@ make all
 
 ```
 
-For development workflows, replace `pip install .` with `pip install -e .`.
+For development workflows, replace `pip install .[dev]` with `pip install -e .[dev]`.
 <br />
 
 
