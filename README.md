@@ -11,6 +11,7 @@ Noe is an **enforcement boundary** between *untrusted proposers* (humans, LLMs, 
 Only an emitted action is eligible for execution. **`undefined` and `error` are both non-execution**, and are distinguishable in the provenance record. `undefined` is a benign fall-through (expected); `error` indicates a violated safety contract and should be surfaced to supervision.
 
 **Scope:** Noe gates discrete, safety-relevant decisions. It is **not** a control loop. A downstream supervisor/reflex layer must implement the configured fallback (hold/slow/stop).
+Noe is fail-stop by design: it prevents unauthorized actions; liveness (retry, fallback, recovery) is handled by the downstream supervisor.
 
 <br />
 
@@ -54,6 +55,10 @@ Noe enforces an **integer-only** contract for all normative commitments — ever
 
 `π_safe` is a deterministic projection: it prunes stale inputs, applies grounding thresholds, and emits the minimal `C_safe` that the evaluator is allowed to see. Hysteresis/debounce belongs in the grounding adapter (pre-`π_safe`); Noe only consumes the grounded predicate membership.
 
+**Epistemic enforcement:** `shi` / `vek` membership is **not** accepted from the proposer. The runtime derives (or verifies) epistemic membership from **trusted sensor evidence** (signed sensor frames or a trusted adapter that attests the grounding result). If a chain asserts knowledge/belief that is not supported by the attested evidence in `C_safe`, strict mode returns `ERR_EPISTEMIC_MISMATCH`.
+
+`undefined` is a semantic evaluation value; `error` is a strict-mode contract rejection emitted by the validator/runtime.
+
 <br />
 
 ## Quick Start
@@ -70,17 +75,18 @@ cd noe
 python3.11 -m venv .venv
 source .venv/bin/activate
 
-pip install --upgrade pip
-pip install .[dev]
+python -m pip install --upgrade pip
+python -m pip install ".[dev]"
 
+make conformance
 make demo
 make all
-
 ```
-
-For development workflows, replace `pip install .[dev]` with `pip install -e .[dev]`.
 <br />
 
+For development workflows, replace python -m pip install ".[dev]" with python -m pip install -e ".[dev]".
+
+<br />
 
 ## One-minute example
 
@@ -90,15 +96,38 @@ shi @human_present khi sek mek @stop sek nek
 
 - `shi` = knowledge check
 - `khi` = guard (if…then)
-- `sek` = clause separator
+- `sek` = explicit scope boundary (required for `khi` action blocks)
 - `mek` = action verb
 - `nek` = chain terminator
 
-Identifiers like `@human_present` and `@stop` are **registry keys** (see `noe/registry.json`); they map domain names to expected literals/actions and are part of what makes evaluation deterministic. The registry fixes identifier types (literal vs action), preventing "same glyph, different meaning" drift across agents.
+Identifiers like `@human_present` and `@stop` are registry keys (see `noe/registry.json` for identifier kinds/types).
 
+Illustrative (domain-pack style): sources/thresholds live in the active Domain Pack; the core registry fixes identifier kinds/types.
+
+Note: `shi @human_present` must be grounded from **attested sensor evidence** (or a trusted adapter result). Proposer-supplied claims do not satisfy `shi` / `vek`.
+
+```json
+{
+  "@human_present": { "kind": "literal", "shard": "modal.knowledge", "source": "vision.person_bbox", "threshold": 0.90 },
+  "@stop":          { "kind": "action",  "verb": "mek", "action_class": "safety_stop" }
+}
+```
 - If `@human_present` is grounded **true** in `C_safe.modal.knowledge` → emits `mek @stop`
 - If grounded **false** → `undefined` (no-op)
 - If missing/ungrounded in strict mode → `error: ERR_EPISTEMIC_MISMATCH` (refusal; reason recorded in certificate when provenance is enabled)
+
+### One-minute example (compound)
+
+```
+shi @human_present ur shi @e_stop_pressed khi sek mek @stop sek nek
+```
+
+- `ur` = disjunction (OR)
+- If **either** `shi @human_present` **or** `shi @e_stop_pressed` is grounded **true** in `C_safe` → emits `mek @stop`
+- If **both** are grounded **false** → `undefined` (no-op)
+- If a required predicate is missing/ungrounded in strict mode → `error` (strict-mode contract rejection)
+
+Propagation rules for `ur` over `undefined` are normative in **NIP-005**.
 
 **[Full Auditor Demo Walkthrough](examples/auditor_demo/README.md)**
 
@@ -120,6 +149,25 @@ make help          # Show all available targets
 
 <br />
 
+### Conformance Integrity Notes (NIP-011)
+
+`make conformance` verifies that each test vector is byte-exact against a locked
+SHA-256 manifest. An integrity failure means the JSON file on disk does **not**
+match the recorded hash.
+
+If a test vector is intentionally modified, the corresponding hashes **must be
+updated in both**:
+
+- `tests/nip011/nip011_manifest.json`
+- `tests/nip011/conformance_pack_v1.0.0.json`
+
+Integrity failures indicate a spec or test change, **not a runtime bug**, and
+must be resolved by updating the manifests and committing them together.
+
+The conformance runner aborts on any mismatch by design.
+
+<br />
+
 ### What a certificate looks like
 
 Every decision produces a JSON certificate with hash commitments. Example (truncated):
@@ -128,6 +176,11 @@ Every decision produces a JSON certificate with hash commitments. Example (trunc
 {
   "noe_version": "v1.0-rc1",
   "chain": "shi @temperature_ok an shi @human_clear khi sek mek @release_pallet sek nek",
+  "registry": {
+    "path": "noe/registry.json",
+    "hash": "9c2c1e4a8b6d5f2a1d9e3c4b7a6f0e11",
+    "commit": "git:3f2a1c9"
+  },
   "context_hashes": {
     "root":   "4802862d...4d74",
     "domain": "8d84e2f1...3c90",
@@ -150,6 +203,7 @@ An auditor can replay: freeze the context, re-evaluate the chain, and verify the
 
 Store certificates in an append-only log; auditors verify by recomputing `context_hashes.safe` and replaying the chain against `context_snapshot.safe`.
 
+Certificates explicitly bind the runtime’s registry by hash (and optional source commit), so auditors replay against the exact identifier → type mapping used at decision time. This prevents cross-agent ambiguity when the same symbolic identifiers exist in multiple registries. Certificates may also bind the **evidence provenance** (e.g., sensor-frame hash / adapter attestation hash) so auditors can verify epistemic grounding was derived from attested inputs rather than proposer claims.
 <br />
 
 ### Representative strict-mode error codes
@@ -177,7 +231,7 @@ Full list: [docs/error_codes.md](docs/error_codes.md)
 | `ur` | Disjunction (OR) | `shi @a ur shi @b` |
 | `nai` | Negation (NOT) | `nai (shi @danger)` |
 | `khi` | Guard (if…then) | `shi @safe khi sek mek @go sek nek` |
-| `sek` | Clause separator | `sek mek @action sek` |
+| `sek` | Explicit scope boundary | `sek mek @action sek` |
 | `nek` | Chain terminator | `... sek nek` |
 | `mek` | Action (do) | `mek @release_pallet` |
 | `men` | Audit action (log) | `men @safety_check` |
@@ -250,7 +304,7 @@ Noe is opinionated. We prioritize **Liability Management** over flexibility.
 
 3. **"Garbage-In, Signed-Garbage-Out"**
    * *Critique:* "If the sensor lies, Noe just signs the lie."
-   * *Defense:* **Correct.** But by signing the lie, Noe **crystallizes it**. You can prove exactly *which* sensor caused the accident, shifting blame from the System Integrator to the Component Vendor.
+   * *Defense:* **Correct.** By crystallizing the inputs used at decision time, Noe helps **attribute fault to specific upstream components** (sensor, adapter, perception model, or integrator pipeline) instead of leaving the incident as an unresolvable “the AI did it.”
 
 <br />
 
