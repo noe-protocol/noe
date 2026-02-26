@@ -2755,8 +2755,9 @@ def run_noe_logic(chain_text, context_object, mode="strict", audience=None, to=N
         except Exception as e:
             # If ContextManager fails (e.g. bad types inside dict), fall back to raw context
             # Validator will catch the mess.
-            print(f"DEBUG: ContextManager failure: {e}")
-            traceback.print_exc()
+            if _DEBUG_ENABLED:
+                print(f"DEBUG: ContextManager failure: {e}")
+                traceback.print_exc()
             # Ensure we have a context hash for meta/provenance even on failure
             try:
                  # Use plural hashes computation to satisfy validator (needs 'domain' key)
@@ -2779,12 +2780,21 @@ def run_noe_logic(chain_text, context_object, mode="strict", audience=None, to=N
                 v_result = {'ok': v_result, 'context_hashes': {}, 'errors': []}
         except NameError:
             # If validator is not wired, we can't validate properly in strict mode.
-            traceback.print_exc()
+            if _DEBUG_ENABLED:
+                traceback.print_exc()
             v_result = {"ok": False, "context_error": "ERR_VALIDATOR_MISSING"}
         except Exception as e:
             # Catch unexpected validator crashes
-            traceback.print_exc()
-            v_result = {"ok": False, "context_error": "ERR_VALIDATOR_CRASH", "reasons": [str(e)]}
+            if _DEBUG_ENABLED:
+                traceback.print_exc()
+            # Clean strict error return instead of printing traceback and continuing
+            return {
+                "domain": "error",
+                "code": "ERR_INTERNAL",
+                "value": "blocked",
+                "details": f"ERR_INTERNAL: {type(e).__name__}: {e}",
+                "meta": {"mode": mode, "context_hashes": hashes or {}},
+            }
 
         # Process result unconditionally
         if isinstance(v_result, dict):
