@@ -207,20 +207,18 @@ HELP = f"""
   {YELLOW(":mode strict")}        evaluate in strict mode (default - real Noe semantics)
   {YELLOW(":mode partial")}       evaluate in partial mode (relaxed grounding)
   {YELLOW(":tree on|off")}        show or hide parse tree
+  {YELLOW(":integrate")}          print a minimal Python integration snippet for the current chain
   {YELLOW(":reset")}              restore default C_safe
   {YELLOW(":quit")} or {YELLOW(":q")}        exit
 """
 
-FIRST_RUN = f"""
-{CYAN("Try this:")}
-  shi @path_clear an shi @controller_ready khi sek mek @move_forward sek nek
-
-{CYAN("Then:")}
-  :set @path_clear false
-
-{CYAN("Then run the same chain again and watch it flip from PERMIT to BLOCK.")}
-{DIM("Same chain, different grounded context, different verdict.")}
-"""
+COLD_START = (
+    f"\n  {BOLD('Noe Gate')}  {DIM('— epistemic safety chains for physical systems')}\n"
+    f"  {DIM('The gate between a planner')}"
+    f"{DIM(chr(39))}{DIM('s intent and a robot')}{DIM(chr(39))}{DIM('s actuator.')}\n"
+    f"  {CYAN('Try:')} shi @path_clear khi sek mek @move_forward sek nek"
+    f"   {DIM('(then: :set @path_clear false)')}\n"
+)
 
 # ── Context mutation ──────────────────────────────────────────────────────────
 
@@ -238,19 +236,57 @@ def _unset_context(ctx: dict, literal: str) -> None:
     ctx["modal"]["knowledge"].pop(literal, None)
     ctx["temporal"]["now"] = int(time.time() * 1000)
 
+# ── Integration snippet ───────────────────────────────────────────────────────
+
+def _print_integrate(chain: str, mode: str) -> None:
+    # Produces a self-contained snippet the developer can drop into their project.
+    # The chain and mode are pre-filled from the current session state.
+    snippet = f'''
+import sys, os
+sys.path.insert(0, "/path/to/noe_reference")  # adjust to your checkout
+from noe.noe_parser import run_noe_logic
+
+context = {{  # replace with your grounded context dict
+    "modal":    {{"knowledge": {{"@path_clear": True}}, "belief": {{}}, "certainty": {{}}}},
+    "temporal": {{"now": 0, "max_skew_ms": 5000}},
+    "spatial":  {{"thresholds": {{"near": 300.0, "far": 2000.0}}}},
+    "literals": {{"@path_clear": True, "@move_forward": "fwd_target"}},
+    "axioms":   {{"value_system": {{"accepted": [], "rejected": []}}}},
+    "audit": {{}}, "entities": {{}}, "rel": {{}}, "demonstratives": {{}},
+}}
+
+result = run_noe_logic(
+    {chain!r},
+    context,
+    mode={mode!r},  # "strict" for production; "partial" for development
+)
+
+if result["domain"] == "action":
+    print("PERMIT", result["value"]["target"])
+elif result["domain"] == "undefined":
+    print("BLOCK  — grounding missing from context")
+else:
+    print("ERROR ", result.get("code"), result.get("value"))
+'''
+    print()
+    print(BOLD("  Integration snippet:"))
+    print(DIM("  " + "─" * 60))
+    for ln in snippet.strip().splitlines():
+        print(f"    {CYAN(ln)}")
+    print(DIM("  " + "─" * 60))
+    print(DIM("  Copy into your project. Adjust sys.path and context to match your setup."))
+    print()
+
+
 # ── Main REPL ─────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    print()
-    print(BOLD("  Noe Playground"))
-    print(DIM("  Type a chain to evaluate it. Gloss is display-only - never used for evaluation."))
-    print(DIM("  Evaluation mode: strict (real Noe semantics). Type :help for all commands."))
-    print(FIRST_RUN)
-    _print_examples()
+    print(COLD_START)
 
     ctx       = _default_context()
     mode      = "strict"
     show_tree = True
+    last_chain = "shi @path_clear khi sek mek @move_forward sek nek"
 
     while True:
         try:
@@ -321,14 +357,18 @@ def main() -> None:
                     _unset_context(ctx, lit)
                     print(DIM(f"  {lit} removed from C_safe."))
 
+            elif cmd == ":integrate":
+                _print_integrate(last_chain, mode)
+
             else:
                 print(RED(f"  Unknown command '{cmd}'. Type :help."))
 
             continue
 
         # ── Chain evaluation ────────────────────────────────────────────────
-        chain   = line
-        glossed = gloss_chain(chain)
+        chain      = line
+        last_chain = chain  # track for :integrate
+        glossed    = gloss_chain(chain)
 
         print()
         print(f"  {DIM('Canonical:')}  {chain}")
