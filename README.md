@@ -131,7 +131,7 @@ For troubleshooting, Docker validation, topics, parameters, and adapter-specific
 **Requirements:** Python 3.11 recommended (3.10 supported), `make`,
 macOS / Linux / WSL2.
 
-```bash
+
 **1. Clone and install**
 
 ```bash
@@ -145,7 +145,10 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 ```
 
-**2. Try the interactive playground (start here)**
+** 2. Try the interactive playground (start here)
+
+Evaluate chains, flip predicates, watch verdicts change.
+This is the fastest way to understand what Noe Gate does.
 
 ```bash
 make play
@@ -185,6 +188,8 @@ source .venv/bin/activate
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
 
+make play
+make verify
 make demo
 make integration-demo
 make conformance
