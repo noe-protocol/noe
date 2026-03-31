@@ -217,11 +217,29 @@ fn eval_epistemic(shard: &str, operand: &Expr, ctx: &ContextLayers, mode: &str) 
             return NoeVal::Undefined;
         }
         _ => {
+            // Compound operand (e.g. `nai @obstacle` in `shi (nai @obstacle)`).
+            //
+            // Python reference semantics (noe_parser.py visit_unary / _apply_unary_op):
+            //   extra_key is only set when the raw operand text starts with "@".
+            //   For a compound expression the raw text is e.g. "nai @obstacle", which
+            //   does NOT start with "@", so extra_key stays None.  _apply_unary_op then
+            //   falls through  «if not extra_key → … else: return "undefined"».
+            //
+            // Therefore shi/vek applied to any non-literal, non-glyph operand evaluates
+            // to Undefined in the Python reference — NOT to the inner expression's value.
+            //
+            // The previous `other => return other` arm was incorrect: it short-circuited
+            // on the inner K3 value (e.g. Truth(false) for `nai @obstacle`) and bypassed
+            // the modal membership check entirely, collapsing K¬P into a raw boolean
+            // instead of an epistemic gate.
             let v = eval_expr(operand, ctx, mode);
             match v {
                 NoeVal::Literal { key, .. } => key,
-                NoeVal::Numeric(_) => return NoeVal::Undefined, // numeric result → undefined for epistemic
-                other => return other,
+                NoeVal::Numeric(_) => return NoeVal::Undefined,
+                // Compound expression result (Truth/Undefined/Error/Action) — the Python
+                // evaluator cannot resolve a modal key for these; return Undefined.
+                NoeVal::Error { .. } => return v,
+                _ => return NoeVal::Undefined,
             }
         }
     };
@@ -1001,5 +1019,136 @@ fn eval_conditional(cond: &Expr, guard: &Expr, ctx: &ContextLayers, mode: &str) 
             code: ERR_GUARD_TYPE,
             message: "khi condition must evaluate to truth or undefined".to_string(),
         },
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Unit tests — eval_epistemic regression suite
+// ---------------------------------------------------------------------------
+//
+// Guards the fix for: eval_epistemic `other => return other` arm was returning
+// the inner K3 value for compound operands instead of Undefined.
+//
+// Python reference (noe_parser.py _apply_unary_op / visit_unary):
+//   extra_key is only set when raw operand text starts with "@".
+//   Compound operands like "nai @obstacle" → extra_key = None → "undefined".
+//
+// Context format: uses layered {root,domain,local} shape matching ground truth.
+// Partial mode is used so the schema validator doesn't reject flat contexts.
+
+#[cfg(test)]
+mod eval_epistemic_regression {
+    use crate::run_noe_logic;
+    use serde_json::json;
+
+    /// Minimal layered context suitable for epistemic tests (partial mode).
+    /// knowledge_val: Some(true/false) to insert "@obstacle" into modal.knowledge.
+    fn layered_ctx(knowledge_val: Option<bool>) -> serde_json::Value {
+        let mut knowledge = serde_json::Map::new();
+        if let Some(v) = knowledge_val {
+            knowledge.insert("@obstacle".to_string(), json!(v));
+        }
+        json!({
+            "root": {
+                "literals": {
+                    "@obstacle": "some_sensor_reading"
+                },
+                "modal": {
+                    "knowledge": knowledge,
+                    "belief": {},
+                    "certainty": {}
+                },
+                "demonstratives": {},
+                "spatial": {
+                    "thresholds": { "near": 1.0, "far": 10.0 },
+                    "orientation": { "target": 0.0, "tolerance": 0.1 }
+                },
+                "temporal": { "now": 1000.0, "max_skew_ms": 100.0 },
+                "axioms": { "value_system": { "accepted": [], "rejected": [] } },
+                "rel": {},
+                "delivery": {},
+                "audit": {}
+            },
+            "domain": {},
+            "local": { "timestamp": 1000.0 }
+        })
+    }
+
+    // ------------------------------------------------------------------
+    // Baseline: shi @literal with simple operand — must still work.
+    // These verify the fix did not break the happy path.
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn shi_literal_in_knowledge_returns_truth_true() {
+        // @obstacle is known and true → shi @obstacle = Truth(true)
+        let ctx = layered_ctx(Some(true));
+        let r = run_noe_logic("shi @obstacle nek", &ctx, "partial");
+        assert_eq!(r.domain, "truth",
+            "shi @obstacle (in knowledge) must be truth; got {:?}", r);
+        assert_eq!(r.value, Some(json!(true)));
+    }
+
+    #[test]
+    fn shi_literal_in_knowledge_returns_truth_false() {
+        // @obstacle is known and false → shi @obstacle = Truth(false)
+        let ctx = layered_ctx(Some(false));
+        let r = run_noe_logic("shi @obstacle nek", &ctx, "partial");
+        assert_eq!(r.domain, "truth",
+            "shi @obstacle (false in knowledge) must be truth/false; got {:?}", r);
+        assert_eq!(r.value, Some(json!(false)));
+    }
+
+    #[test]
+    fn shi_literal_absent_from_knowledge_returns_undefined() {
+        // @obstacle NOT in knowledge → shi @obstacle = Undefined (partial)
+        let ctx = layered_ctx(None);
+        let r = run_noe_logic("shi @obstacle nek", &ctx, "partial");
+        assert_eq!(r.domain, "undefined",
+            "shi @obstacle (missing from knowledge) must be undefined; got {:?}", r);
+    }
+
+    // ------------------------------------------------------------------
+    // eval_epistemic compound-operand fix — regression guard.
+    //
+    // The pre-fix `other => return other` arm would pass through whatever
+    // the inner expression evaluated to, bypassing the modal store. The
+    // fix makes it return Undefined for any non-Literal compound operand.
+    //
+    // Note: "shi nai @obstacle" is parsed by the Rust parser as
+    // `shi` applied to glyph `nai`, followed by `@obstacle` — matching
+    // the Python parser's behaviour where extra_key is None for compound
+    // expressions. We test the compound eval path via a BinOp compound
+    // (true an false) to directly exercise the fixed `_ =>` arm without
+    // parse ambiguity.
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn shi_of_compound_bool_is_undefined() {
+        // "shi (true an false) nek" — inner evaluates to Truth(false).
+        // The `_ => return NoeVal::Undefined` arm should fire, NOT passthrough.
+        let ctx = layered_ctx(Some(true));
+        let r = run_noe_logic("shi (true an false) nek", &ctx, "partial");
+        assert_eq!(r.domain, "undefined",
+            "shi of compound bool expression must be undefined; got {:?}", r);
+    }
+
+    #[test]
+    fn shi_of_undefined_expression_is_undefined() {
+        // "shi (@obstacle ur false) nek" where @obstacle not in knowledge →
+        // inner is Undefined ur false = Undefined; shi(Undefined) must be Undefined.
+        let ctx = layered_ctx(None);
+        let r = run_noe_logic("shi (@obstacle ur false) nek", &ctx, "partial");
+        assert_eq!(r.domain, "undefined",
+            "shi of undefined compound must be undefined; got {:?}", r);
+    }
+
+    #[test]
+    fn vek_of_compound_bool_is_undefined() {
+        // Same fix applies to vek (belief).
+        let ctx = layered_ctx(Some(true));
+        let r = run_noe_logic("vek (true an false) nek", &ctx, "partial");
+        assert_eq!(r.domain, "undefined",
+            "vek of compound bool expression must be undefined; got {:?}", r);
     }
 }
