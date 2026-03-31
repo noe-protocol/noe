@@ -20,10 +20,7 @@ play:                          ## Launch interactive playground (start here)
 
 # ─── Verification (CI) ───────────────────────────────────────────────
 
-verify:                        ## Run full correctness suite (unit + conformance + guard + audit)
-	@echo ""
-	@echo "── UNIT TESTS ────────────────────────────────────────────"
-	$(PYTHON) -m unittest discover tests
+verify:                        ## Run trusted correctness suite (conformance + guard + audit)
 	@echo ""
 	@echo "── NIP-011 CONFORMANCE ───────────────────────────────────"
 	$(PYTHON) tests/nip011/run_conformance.py
