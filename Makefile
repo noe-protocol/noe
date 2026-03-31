@@ -1,14 +1,44 @@
 # Noe Gate — Makefile
-# Usage: make test | make conformance | make demo | make playground | make bench | make all
+#
+# Onboarding:   make play      → interactive playground (start here)
+# Verification: make verify    → full correctness suite (CI equivalent)
+# Targets:      make test | make conformance | make demo | make bench | make all
 
 PYTHON ?= python3
 
-.PHONY: test conformance gloss playground demo demo-full guard bench integration-demo \
+.PHONY: play verify test conformance gloss playground demo demo-full guard bench integration-demo \
         audit-demo all clean clean-all help \
         rust-parity-fixtures rust-conformance rust-diff rust-bench \
         rust-build-ffi rust-hash-parity rust-parser-golden rust-test \
         run-c-smoketest run-cpp-smoketest \
         build-zone-entry-example run-zone-entry
+
+# ─── Developer onboarding ────────────────────────────────────────────
+
+play:                          ## Launch interactive playground (start here)
+	$(PYTHON) noe_playground.py
+
+# ─── Verification (CI) ───────────────────────────────────────────────
+
+verify:                        ## Run full correctness suite (unit + conformance + guard + audit)
+	@echo ""
+	@echo "── UNIT TESTS ────────────────────────────────────────────"
+	$(PYTHON) -m unittest discover tests
+	@echo ""
+	@echo "── NIP-011 CONFORMANCE ───────────────────────────────────"
+	$(PYTHON) tests/nip011/run_conformance.py
+	@echo ""
+	@echo "── ROBOT GUARD (golden vectors) ──────────────────────────"
+	$(PYTHON) examples/robot_guard_demo.py
+	@echo ""
+	@echo "── AUDIT / TAMPER DETECTION ──────────────────────────────"
+	$(PYTHON) examples/auditor_demo/verify_shipment.py
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════"
+	@echo "  ✅  VERIFY COMPLETE"
+	@echo "  same rule + same grounded context → same verdict"
+	@echo "  stale / conflicting / missing context → non-execution"
+	@echo "════════════════════════════════════════════════════════════"
 
 # ─── Core Test Suites ────────────────────────────────────────────────
 
