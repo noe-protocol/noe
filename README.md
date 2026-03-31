@@ -124,10 +124,15 @@ python3 "$REPO_ROOT/ros2_adapter/examples/mobile_robot_zone_entry/publish_scenar
 
 For troubleshooting, Docker validation, topics, parameters, and adapter-specific details, see [ros2_adapter/README.md](ros2_adapter/README.md).
 
+<br />
+
 ### Python - reference and demo path
 
 **Requirements:** Python 3.11 recommended (3.10 supported), `make`,
 macOS / Linux / WSL2.
+
+```bash
+**1. Clone and install**
 
 ```bash
 git clone https://github.com/noe-protocol/noe-gate.git
@@ -138,11 +143,18 @@ source .venv/bin/activate
 
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
+```
 
-make demo  
-make integration-demo
-make conformance
-make playground
+**2. Try the interactive playground (start here)**
+
+```bash
+make play
+```
+
+**3. Run the full correctness suite (CI equivalent)**
+
+```bash
+make verify
 ```
 
 <br />
