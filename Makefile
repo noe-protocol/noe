@@ -20,9 +20,10 @@ play:                          ## Launch interactive playground (start here)
 
 # ─── Verification (CI) ───────────────────────────────────────────────
 
-verify:                        ## Run trusted correctness suite (conformance + guard + audit)
-	@echo ""
-	@echo "── NIP-011 CONFORMANCE ───────────────────────────────────"
+verify: test conformance bench ## Run trusted correctness suite (conformance + unit tests + perf)
+	@echo "All checks passed."
+
+verify-legacy:                 ## Run trusted correctness suite (conformance + guard + audit)
 	$(PYTHON) tests/nip011/run_conformance.py
 	@echo ""
 	@echo "── ROBOT GUARD (golden vectors) ──────────────────────────"
@@ -35,6 +36,27 @@ verify:                        ## Run trusted correctness suite (conformance + g
 	@echo "  ✅  VERIFY COMPLETE"
 	@echo "  same rule + same grounded context → same verdict"
 	@echo "  stale / conflicting / missing context → non-execution"
+	@echo "════════════════════════════════════════════════════════════"
+
+verify-all:                     ## Run all test suites including experimental/quarantined
+	@echo ""
+	@echo "── UNIT TESTS (Supported Surface) ────────────────────────"
+	$(PYTHON) -m unittest discover tests
+	@echo ""
+	@echo "── UNIT TESTS (Quarantined/Experimental) ─────────────────"
+	$(PYTHON) -m unittest discover tests/quarantined || true
+	@echo ""
+	@echo "── NIP-011 CONFORMANCE ───────────────────────────────────"
+	$(PYTHON) tests/nip011/run_conformance.py
+	@echo ""
+	@echo "── ROBOT GUARD (golden vectors) ──────────────────────────"
+	$(PYTHON) examples/robot_guard_demo.py
+	@echo ""
+	@echo "── AUDIT / TAMPER DETECTION ──────────────────────────────"
+	$(PYTHON) examples/auditor_demo/verify_shipment.py
+	@echo ""
+	@echo "════════════════════════════════════════════════════════════"
+	@echo "  ✅  VERIFY-ALL COMPLETE"
 	@echo "════════════════════════════════════════════════════════════"
 
 # ─── Core Test Suites ────────────────────────────────────────────────
