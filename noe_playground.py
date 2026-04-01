@@ -34,7 +34,6 @@ from arpeggio import Terminal, NonTerminal
 from noe.noe_parser import _get_or_create_parser
 from noe.gloss import gloss_chain
 from noe import ContextManager, NoeRuntime
-from noe.explain import explain_result, print_context
 
 # ── ANSI colours ──────────────────────────────────────────────────────────────
 
@@ -128,6 +127,39 @@ def _format_verdict(result: dict) -> str:
 
     return DIM(f"{domain}  {str(value)[:60]}")
 
+def explain_result(result) -> str:
+    if result.domain in ("action", "list"):
+        actions = []
+        val_list = result.value if isinstance(result.value, list) else [result.value]
+        for a in val_list:
+            if not isinstance(a, dict):
+                continue
+            v_name = str(a.get('target', 'unknown_target'))
+            args = [str(x) for x in a.get('args', [])]
+            actions.append(f"{v_name}({', '.join(args)})")
+        
+        verbs_str = ", ".join(actions)
+        return f"{GREEN(BOLD('Verdict: PERMIT'))}  {DIM('(--> Action permitted. All guards satisfied under grounded context: ')}{verbs_str}{DIM(')')}"
+    elif result.domain == "undefined":
+        return f"{YELLOW(BOLD('Verdict: BLOCKED'))} {DIM('(--> Refused. The required facts are not present in the grounded context.)')}"
+    elif result.domain in ("error", "err"):
+        err_msg = str(result.error or result.value or "Unknown structural error")
+        return f"{RED(BOLD('Verdict: ERROR'))} {DIM(f'(--> Refused. Structural error or type mismatch: {err_msg})')}"
+    return f"{DIM('Verdict: UNKNOWN')} ({result.domain})"
+
+def print_context(ctx: dict) -> None:
+    knowledge = ctx.get("modal", {}).get("knowledge", {})
+    literals  = ctx.get("literals", {})
+    all_keys  = sorted(set(list(knowledge.keys()) + list(literals.keys())))
+    print("\n  " + BOLD("Current Context Overview:"))
+    print(DIM("  " + "─" * 60))
+    for k in all_keys:
+        in_k    = k in knowledge
+        val     = literals.get(k, knowledge.get(k))
+        grounded = GREEN("✓ grounded") if in_k else DIM("  literal only")
+        val_str  = GREEN("true") if val is True else (RED("false") if val is False else str(val))
+        print(f"    {k:<28} {val_str:<14} {grounded}")
+    print(DIM("  " + "─" * 60) + "\n")
 # ── Parse tree ────────────────────────────────────────────────────────────────
 
 def _node_name(node) -> str:
@@ -167,7 +199,7 @@ def _print_parse_tree(chain: str) -> None:
     except Exception as exc:
         print(f"  {DIM('Parse tree:')}  {RED(f'unavailable - {exc}')}")
 
-from noe.explain import explain_result, print_context
+
 
 def _print_examples() -> None:
     print()
