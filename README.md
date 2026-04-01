@@ -54,6 +54,12 @@ This repository now includes a Python reference runtime, a Rust core, language b
   - @zone_clear=true – PERMITTED
   - result: `ALL PASS`
 
+**Formally verified (specification-level):**
+
+- K3 evaluation semantics, provenance integrity, temporal safety, and
+  end-to-end safety invariant - 117 properties, zero violations (Z3 SMT
+  solver). Isabelle/HOL theory files included. See [`formal/`](formal/).
+
 **Not yet claimed:**
 
 - production deployment readiness
