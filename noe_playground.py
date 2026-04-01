@@ -339,11 +339,31 @@ def _print_filtered_context(chain: str, ctx: dict) -> None:
 # ── Main REPL ─────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    welcome_screen = f"""
+{RED('▽ Noe Gate 1.0 (main) — Deterministic action gating.')}
+{BOLD(' ███    ██  ██████  ███████      ██████   █████  ████████ ███████')}
+{BOLD(' ████   ██ ██    ██ ██          ██       ██   ██    ██    ██     ')}
+{BOLD(' ██ ██  ██ ██    ██ █████       ██   ███ ███████    ██    █████  ')}
+{BOLD(' ██  ██ ██ ██    ██ ██          ██    ██ ██   ██    ██    ██     ')}
+{BOLD(' ██   ████  ██████  ███████      ██████  ██   ██    ██    ███████')}
+{RED('               ▽ NOE GATE ▽')}
+
+{DIM('╭── Noe Gate ─────────────────────────────────────────────────────────╮')}
+{DIM('│')} Planners and LLMs propose actions. Noe Gate decides whether they    {DIM('│')}
+{DIM('│')} may execute. It checks grounded context — not trust, not intent.    {DIM('│')}
+{DIM('│')}                                                                     {DIM('│')}
+{DIM('│')} If the required knowledge is absent, execution does not pass.       {DIM('│')}
+{DIM('╰─────────────────────────────────────────────────────────────────────╯')}
+
+  [Enter] Start  
+{DIM('──────────────────────────────────────────────────────────────────────')}
+"""
     try:
-        from noe.onboarding import show_framing_screen
-        show_framing_screen()
-    except Exception as e:
-        print(DIM(f"  Skipping interactive onboarding: {e}"))
+        a = input(welcome_screen)
+    except (EOFError, KeyboardInterrupt):
+        sys.exit(0)
+    
+    print("\n")
 
     ctx       = _default_context()
     mode      = "strict"
@@ -381,7 +401,6 @@ def main() -> None:
         # Intercept commands (either explicit : commands, or known safe intercepts)
         if cmd.startswith(":") or cmd in ("quit", "exit", "q", "help", "clear", "back", "menu"):
             if cmd in (":quit", ":q", ":exit", "quit", "exit", "q"):
-                import sys
                 sys.exit(0)
 
             elif cmd in (":menu", "menu", "back"):
