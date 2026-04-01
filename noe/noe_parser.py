@@ -894,11 +894,15 @@ class NoeEvaluator(PTNodeVisitor):
         if is_undef(v):
             return None
 
-        # 2. Domain Unwrapping (Truth domain)
+        # 2. Singleton-list unwrapping (from sek...sek scoping)
+        if isinstance(v, (list, tuple)) and len(v) == 1:
+            return NoeEvaluator._to_trit(v[0])
+
+        # 3. Domain Unwrapping (Truth domain)
         if isinstance(v, dict) and v.get("domain") == "truth":
             return NoeEvaluator._to_trit(v.get("value"))
 
-        # 3. Standard checks
+        # 4. Standard checks
         if isinstance(v, bool):
             return v
         if isinstance(v, (int, float)):
@@ -1952,10 +1956,13 @@ class NoeEvaluator(PTNodeVisitor):
         if isinstance(right, dict) and right.get("domain") == "error":
             return right
             
-        if (isinstance(left, dict) and left.get("domain") == "undefined") or left == "undefined":
-            return "undefined"
-        if (isinstance(right, dict) and right.get("domain") == "undefined") or right == "undefined":
-            return "undefined"
+        # K3 Strong Kleene: 'an' and 'ur' handle undefined internally
+        # (F∧U=F, T∨U=T), so skip blanket undefined propagation for them.
+        if op not in ("an", "ur"):
+            if (isinstance(left, dict) and left.get("domain") == "undefined") or left == "undefined":
+                return "undefined"
+            if (isinstance(right, dict) and right.get("domain") == "undefined") or right == "undefined":
+                return "undefined"
 
         def _unwrap(x):
             if isinstance(x, dict) and "value" in x:
