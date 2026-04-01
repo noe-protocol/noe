@@ -64,6 +64,20 @@ This repository now includes a Python reference runtime, a Rust core, language b
 <br />
 
 ## Quick Start
+```bash
+git clone https://github.com/noe-protocol/noe-gate.git
+cd noe-gate
+
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+pip install --upgrade pip
+pip install -e ".[dev]"
+
+make play
+```
+
+<br />
 
 ### ROS2 - validated target path
 
@@ -127,35 +141,38 @@ For troubleshooting, Docker validation, topics, parameters, and adapter-specific
 <br />
 
 ### Python - reference and demo path
-
+ 
 **Requirements:** Python 3.11 recommended (3.10 supported), `make`,
 macOS / Linux / WSL2.
-
-
-**1. Clone and install**
-
-```bash
-git clone https://github.com/noe-protocol/noe-gate.git
-cd noe-gate
-
-python3.11 -m venv .venv
-source .venv/bin/activate
-
-python -m pip install --upgrade pip
-python -m pip install -e ".[dev]"
-```
-
-** 2. Try the interactive playground (start here)
-
+ 
+If you haven't already, clone and install using the [Quick Start](#quick-start) above.
+ 
+**1. Try the interactive playground (start here)**
+ 
 Evaluate chains, flip predicates, watch verdicts change.
 This is the fastest way to understand what Noe Gate does.
-
+ 
 ```bash
 make play
 ```
-
+ 
+**2. Use it in your code**
+ 
+```python
+from noe import parse_chain, evaluate
+ 
+chain = parse_chain("shi @path_clear khi sek mek @move_forward sek nek")
+context = {
+    "modal": {"knowledge": {"@path_clear": True}},
+    "literals": {"@path_clear": True, "@move_forward": "fwd_target"}
+}
+ 
+result = evaluate(chain, context)
+# result.domain → "action" | "undefined" | "error"
+```
+ 
 **3. Run the full correctness suite (CI equivalent)**
-
+ 
 ```bash
 make verify
 ```
@@ -190,10 +207,6 @@ python -m pip install -e ".[dev]"
 
 make play
 make verify
-make demo
-make integration-demo
-make conformance
-make playground
 ```
 
 <br />
@@ -201,17 +214,21 @@ make playground
 ### Common commands
 
 ```bash
-make demo
-make demo-full
-make integration-demo
-make guard
-make conformance
-make test
-make bench
-make audit-demo
-make playground
-make all
-make help
+Getting started:
+  make play              # interactive playground — start here
+
+Verification:
+  make verify            # full correctness suite
+
+Development:
+  make test              # unit tests
+  make conformance       # NIP-011 conformance vectors
+  make bench             # timing benchmarks
+
+Demos:
+  make demo              # auditor shipment demo
+  make integration-demo  # planner → gate → controller pipeline
+  make audit-demo        # certificate replay and tamper detection
 ```
 
 <br />
@@ -516,31 +533,29 @@ The following English glosses are display-only reading aids. Canonical Noe chain
 
 ## Interactive playground
 
-`make playground` launches an interactive chain evaluator. Type a chain, see the
-canonical form, gloss, parse tree, and verdict. Modify the context on the fly to
-watch evaluation flip.
-
+`make play` launches a guided interactive evaluator. It walks you through
+your first chain evaluation, shows why the verdict was reached, and lets you
+flip the result by changing grounded context.
 ```
-  Noe Gate Playground
-  Evaluation mode: strict (real Noe Gate semantics).
+noe [strict]> shi @path_clear khi sek mek @move_forward sek nek
 
-Try this:
-  shi @path_clear an shi @controller_ready khi sek mek @move_forward sek nek
+  Canonical:  shi @path_clear khi sek mek @move_forward sek nek
+  Gloss    :  KNOW @path_clear IF [ DO @move_forward ] END
+  Verdict  :  PERMIT → @move_forward
 
-Then:
-  :set @path_clear false
+  Context (why it permitted):
+    @path_clear                  true   ✓ grounded
 
-Then run the same chain again and watch it flip from PERMIT to BLOCK.
-Same chain, different grounded context, different verdict.
+noe [strict]> :set @path_clear false
 
-noe [strict]> shi @path_clear an shi @controller_ready khi sek mek @move_forward sek nek
+noe [strict]> shi @path_clear khi sek mek @move_forward sek nek
 
-  Canonical:   shi @path_clear an shi @controller_ready khi sek mek @move_forward sek nek
-  Gloss    :   KNOW @path_clear AND KNOW @controller_ready IF [ DO @move_forward ] END
-  Verdict  :   PERMIT  --> @move_forward
+  Verdict  :  BLOCK (undefined — @path_clear not grounded in C_safe)
 ```
 
-Commands: `:examples` `:context` `:set @lit true/false` `:mode strict/partial` `:tree on/off` `:reset` `:help`
+Same chain. Different context. Different verdict.
+
+Commands: `:help` `:examples` `:scenarios` `:integrate` `:context` `:set @lit true/false` `:next` `:reset`
 
 <br />
 
@@ -621,7 +636,7 @@ flowchart TD
 | Grounding reference adapters | Implemented | `packages/grounding/` - LiDAR zone, camera human-presence, epistemic mapping, temporal utilities. |
 | Certificate persistence + replay | Implemented | `noe/persistence/` - append-only JSONL store, tamper detection, replay engine, `noe_replay` CLI. |
 | BT.CPP converter | Initial release | `tools/btcpp_converter/` - migration estimator, chain generation, placeholder registry, conversion report. |
-| Interactive playground | Implemented | `noe_playground.py` - REPL with parse tree, gloss, context mutation, `make playground`. |
+| Interactive playground | Implemented | `noe_playground.py` - REPL with parse tree, gloss, context mutation, `make play`. |
 | Domain packs | Not started | Planned for logistics and healthcare verticals. |
 
 **Portability contract:** any conforming runtime must match parse and
