@@ -386,12 +386,10 @@ def main() -> None:
 {DIM('│')}                                                                     {DIM('│')}
 {DIM('│')} If the required knowledge is absent, execution does not pass.       {DIM('│')}
 {DIM('╰─────────────────────────────────────────────────────────────────────╯')}
-
-  [Enter] Start  
-{DIM('──────────────────────────────────────────────────────────────────────')}
 """
+    print(welcome_screen)
     try:
-        a = input(welcome_screen)
+        input("  [Enter] Start  \n──────────────────────────────────────────────────────────────────────\n")
     except (EOFError, KeyboardInterrupt):
         sys.exit(0)
     
