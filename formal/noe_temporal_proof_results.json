@@ -1,0 +1,176 @@
+{
+  "prover": "Z3 4.12.2",
+  "protocol": "Noe Protocol",
+  "domain": "Temporal Safety",
+  "nips": [
+    "NIP-008",
+    "NIP-019"
+  ],
+  "timestamp": "2026-04-01T04:05:30.608318Z",
+  "total_proofs": 23,
+  "total_proven": 23,
+  "all_proven": true,
+  "results": [
+    {
+      "id": "T1",
+      "description": "Fresh evidence passes through (age within bounds)",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T2",
+      "description": "Stale evidence is rejected (age > tau_stale)",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T3",
+      "description": "Future evidence beyond skew is rejected",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T4",
+      "description": "Evidence at exactly tau_stale age is still fresh (\u2264 not <)",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T5",
+      "description": "Evidence at tau_stale + 1 is rejected",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T5b",
+      "description": "Evidence at exactly max_skew ahead is still fresh",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T5c",
+      "description": "Evidence at max_skew + 1 ahead is rejected",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T6a",
+      "description": "Stale evidence + True inner = Undefined (temporal overrides truth)",
+      "nip_ref": "NIP-008 + NIP-005",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T6b",
+      "description": "Fresh evidence + Undefined inner = Undefined (K3 preserved)",
+      "nip_ref": "NIP-008 + NIP-005",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T6c",
+      "description": "Temporal rejection is always Undefined, never False",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T7a",
+      "description": "Stricter tau never accepts more than lenient tau",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T7b",
+      "description": "Stricter skew never accepts more than lenient skew",
+      "nip_ref": "NIP-008 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T8a",
+      "description": "Negotiated tau \u2264 both agents' tau (stricter wins)",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T8b",
+      "description": "Negotiated skew \u2264 both agents' skew (stricter wins)",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T8c",
+      "description": "Negotiated tau = min(tau_a, tau_b)",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T8d",
+      "description": "Negotiation is commutative: negotiate(a,b) = negotiate(b,a)",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T8e",
+      "description": "Negotiation is associative",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T8f",
+      "description": "Negotiation is idempotent: negotiate(a,a) = a",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T9a",
+      "description": "If evidence is fresh under negotiated tau, it's fresh under both agents' tau",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T9b",
+      "description": "If evidence is fresh under negotiated skew, it's fresh under both agents' skew",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T10a",
+      "description": "Stale guard evidence \u2192 no action (full pipeline)",
+      "nip_ref": "NIP-005 + NIP-008",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T10b",
+      "description": "Future guard evidence \u2192 no action (full pipeline)",
+      "nip_ref": "NIP-005 + NIP-008",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "T10c",
+      "description": "Action requires BOTH fresh evidence AND true guard",
+      "nip_ref": "NIP-005 + NIP-008 + NIP-019",
+      "status": "PROVEN",
+      "counterexample": null
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "prover": "Z3 4.12.2",
+  "protocol": "Noe Protocol",
+  "domain": "End-to-End Safety Kernel",
+  "nips": [
+    "NIP-005",
+    "NIP-007",
+    "NIP-008",
+    "NIP-009",
+    "NIP-019"
+  ],
+  "timestamp": "2026-04-01T04:19:34.533143Z",
+  "total_proofs": 23,
+  "total_proven": 23,
+  "all_proven": true,
+  "results": [
+    {
+      "id": "C1",
+      "description": "Nested guards compose via conjunction: (g1 kra (g2 kra a)) = (g1 an g2) kra a",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C2",
+      "description": "Conjunctive guard requires BOTH true",
+      "nip_ref": "NIP-005 \u00a74 + NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C3",
+      "description": "Disjunctive guard passes if EITHER is true",
+      "nip_ref": "NIP-005 \u00a74 + NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C4",
+      "description": "Negated guard: nai(T) blocks, nai(F) passes",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C5",
+      "description": "Double guard is idempotent: g kra (g kra a) = g kra a",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C6",
+      "description": "True guard + undefined action = undefined",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B1",
+      "description": "nai of failed guard = undefined (can't extract from failed guard)",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B2",
+      "description": "Guards distribute over conjunction when both pass",
+      "nip_ref": "NIP-005 \u00a74 + NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B3",
+      "description": "Mixed guard (one T, one F) propagates undefined correctly",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C7",
+      "description": "nai(U) = U",
+      "nip_ref": "NIP-005 \u00a73.1",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C8",
+      "description": "U an U = U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C9",
+      "description": "U ur U = U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C10",
+      "description": "U kra a = U for all a",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C11",
+      "description": "No expression over only-undefined inputs produces True",
+      "nip_ref": "NIP-005 + NIP-009 \u2014 fundamental closure property",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "SK1a",
+      "description": "Stale evidence \u2192 undefined action + null provenance",
+      "nip_ref": "ALL NIPs",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "SK1b",
+      "description": "Future evidence \u2192 undefined action + null provenance",
+      "nip_ref": "ALL NIPs",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "SK1c",
+      "description": "False guard + fresh evidence \u2192 undefined action + null provenance",
+      "nip_ref": "ALL NIPs",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "SK1d",
+      "description": "Undefined guard + fresh evidence \u2192 undefined action + null provenance",
+      "nip_ref": "ALL NIPs",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "SK2",
+      "description": "NON-NULL PROVENANCE \u2192 fresh evidence AND true guard",
+      "nip_ref": "ALL NIPs \u2014 Master Audit Theorem",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "SK3a",
+      "description": "Negotiated freshness implies freshness under BOTH agents' bounds",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "SK3b",
+      "description": "Negotiated pipeline action \u2192 both agents would individually approve",
+      "nip_ref": "NIP-019 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "SK4a",
+      "description": "Conjunctive guard through temporal: both guards must be true AND fresh",
+      "nip_ref": "ALL NIPs",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "SK4b",
+      "description": "Nested guard through temporal: inner AND outer must be true AND fresh",
+      "nip_ref": "ALL NIPs",
+      "status": "PROVEN",
+      "counterexample": null
+    }
+  ]
+}

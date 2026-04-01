@@ -1,0 +1,141 @@
+{
+  "prover": "Z3 4.12.2",
+  "protocol": "Noe Protocol",
+  "domain": "Provenance Chain Integrity",
+  "nips": [
+    "NIP-007",
+    "NIP-010"
+  ],
+  "timestamp": "2026-04-01T04:06:23.511820Z",
+  "total_proofs": 18,
+  "total_proven": 18,
+  "all_proven": true,
+  "results": [
+    {
+      "id": "P1",
+      "description": "Same inputs \u2192 same provenance hash (deterministic)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P2a",
+      "description": "Undefined result \u2192 null hash (for all inputs)",
+      "nip_ref": "NIP-007 \u00a73 P6",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P2b",
+      "description": "True result \u2192 hash_fn output (non-null pathway)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P2c",
+      "description": "False result \u2192 hash_fn output (non-null pathway)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P3a",
+      "description": "Provenance hash is always either hash_fn(...) or null (complete)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P3b",
+      "description": "T and F produce the same hash (result not in hash input)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P3c",
+      "description": "U produces a different hash than T (null vs non-null, assuming hash_fn \u2260 0)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P4a",
+      "description": "Different chain \u2192 different provenance hash (given CR)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P4b",
+      "description": "Different context \u2192 different provenance hash (given CR)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P4c",
+      "description": "Different parent \u2192 different provenance hash (given CR)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P5a",
+      "description": "Undefined parent \u2192 child's parent_hash is null",
+      "nip_ref": "NIP-007 \u00a73 P6",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P5b",
+      "description": "Chain of two undefineds: both produce null hash",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P6a",
+      "description": "Failed guard \u2192 null provenance hash",
+      "nip_ref": "NIP-005 \u00a74 + NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P6b",
+      "description": "Non-null provenance \u2192 guard was True (audit proof)",
+      "nip_ref": "NIP-005 \u00a74 + NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P6c",
+      "description": "True guard provenance = same as action's provenance",
+      "nip_ref": "NIP-005 \u00a74 + NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P7a",
+      "description": "Every definite evaluation has a provenance record",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P7b",
+      "description": "Every undefined evaluation has null provenance",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "P7c",
+      "description": "Provenance function is total (defined for all K3 values)",
+      "nip_ref": "NIP-007 \u00a73",
+      "status": "PROVEN",
+      "counterexample": null
+    }
+  ]
+}

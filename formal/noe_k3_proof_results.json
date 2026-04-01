@@ -1,0 +1,387 @@
+{
+  "prover": "Z3 4.12.2",
+  "logic": "QF_DT + QF_UF (Quantifier-Free Datatypes + Uninterpreted Functions)",
+  "protocol": "Noe Protocol",
+  "nips": [
+    "NIP-005",
+    "NIP-009",
+    "NIP-011"
+  ],
+  "timestamp": "2026-04-01T03:52:54.107771Z",
+  "total_proofs": 53,
+  "total_proven": 53,
+  "all_proven": true,
+  "results": [
+    {
+      "id": "A1",
+      "description": "nai T = F",
+      "nip_ref": "NIP-005 \u00a73.1",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "A2",
+      "description": "nai F = T",
+      "nip_ref": "NIP-005 \u00a73.1",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "A3",
+      "description": "nai U = U (uncertainty preserved)",
+      "nip_ref": "NIP-005 \u00a73.1",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "A4",
+      "description": "Double negation: nai(nai(p)) = p (involution)",
+      "nip_ref": "NIP-005 \u00a73.1",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B1",
+      "description": "T an T = T",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B2",
+      "description": "T an F = F",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B3",
+      "description": "F an T = F",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B4",
+      "description": "F an F = F",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B5",
+      "description": "T an U = U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B6",
+      "description": "U an T = U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B7",
+      "description": "F an U = F (False dominates \u2014 STRONG Kleene)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B8",
+      "description": "U an F = F (False dominates \u2014 STRONG Kleene)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B9",
+      "description": "U an U = U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B10",
+      "description": "an is commutative: p an q = q an p",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B11",
+      "description": "an is associative: (p an q) an r = p an (q an r)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B12",
+      "description": "T is identity for an: T an p = p",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "B13",
+      "description": "F is annihilator for an: F an p = F",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C1",
+      "description": "T ur T = T",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C2",
+      "description": "T ur F = T",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C3",
+      "description": "F ur T = T",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C4",
+      "description": "F ur F = F",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C5",
+      "description": "T ur U = T (True dominates \u2014 STRONG Kleene)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C6",
+      "description": "U ur T = T (True dominates \u2014 STRONG Kleene)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C7",
+      "description": "F ur U = U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C8",
+      "description": "U ur F = U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C9",
+      "description": "U ur U = U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C10",
+      "description": "ur is commutative: p ur q = q ur p",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C11",
+      "description": "ur is associative: (p ur q) ur r = p ur (q ur r)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C12",
+      "description": "F is identity for ur: F ur p = p",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "C13",
+      "description": "T is annihilator for ur: T ur p = T",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "D1",
+      "description": "De Morgan 1: nai(p an q) = (nai p) ur (nai q)",
+      "nip_ref": "NIP-009 \u00a72, NIP-011",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "D2",
+      "description": "De Morgan 2: nai(p ur q) = (nai p) an (nai q)",
+      "nip_ref": "NIP-009 \u00a72, NIP-011",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "E1",
+      "description": "an distributes over ur: p an (q ur r) = (p an q) ur (p an r)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "E2",
+      "description": "ur distributes over an: p ur (q an r) = (p ur q) an (p ur r)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "F1",
+      "description": "True guard passes through: T kra a = a",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "F2",
+      "description": "False guard blocks: F kra a = U",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "F3",
+      "description": "Undefined guard blocks: U kra a = U",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "G1",
+      "description": "Safety Invariant: \u00ac(g = T) \u2192 (g kra a) = U",
+      "nip_ref": "NIP-005 \u00a74, AGENTS.md Invariant #1",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "G2",
+      "description": "Action requires proof: (g kra a) \u2260 U \u2192 g = T",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "G3",
+      "description": "Guard is binary: kra result is either 'a' (if T) or U",
+      "nip_ref": "NIP-005 \u00a74",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "H1",
+      "description": "F an U = F (Strong Kleene, NOT Weak Kleene where F\u2227U=U)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "H2",
+      "description": "T ur U = T (Strong Kleene, NOT Weak Kleene where T\u2228U=U)",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "H3",
+      "description": "Noe refutes Weak Kleene: F an U \u2260 U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "H4",
+      "description": "Noe refutes Weak Kleene: T ur U \u2260 U",
+      "nip_ref": "NIP-009 \u00a72",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "I1",
+      "description": "p an (p ur q) = p",
+      "nip_ref": "K3 lattice property",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "I2",
+      "description": "p ur (p an q) = p",
+      "nip_ref": "K3 lattice property",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "J1",
+      "description": "p an p = p",
+      "nip_ref": "K3 lattice property",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "J2",
+      "description": "p ur p = p",
+      "nip_ref": "K3 lattice property",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "K1",
+      "description": "T an nai(T) = F (complement for definite values)",
+      "nip_ref": "K3",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "K2",
+      "description": "F an nai(F) = F (complement for definite values)",
+      "nip_ref": "K3",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "K3_special",
+      "description": "U an nai(U) = U (NOT F \u2014 excluded middle fails for undefined)",
+      "nip_ref": "K3 \u2014 critical distinction from classical logic",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "K4",
+      "description": "Excluded middle fails: \u00ac\u2200p. p ur nai(p) = T",
+      "nip_ref": "K3 \u2014 U \u2228 \u00acU = U \u2260 T",
+      "status": "PROVEN",
+      "counterexample": null
+    },
+    {
+      "id": "K5",
+      "description": "Non-contradiction fails: \u00ac\u2200p. p an nai(p) = F",
+      "nip_ref": "K3 \u2014 U \u2227 \u00acU = U \u2260 F",
+      "status": "PROVEN",
+      "counterexample": null
+    }
+  ]
+}
