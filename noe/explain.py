@@ -39,7 +39,7 @@ def explain_result(result) -> str:
         return YELLOW(f"TRUTH  value={value}")
 
     if domain == "undefined":
-        return RED("BLOCK  (undefined — grounding missing from C_safe)")
+        return RED("BLOCK  (undefined - grounding missing from C_safe)")
 
     if domain in ("error", "err") or code:
         return RED(f"ERROR  {code or str(value)[:60]}")
