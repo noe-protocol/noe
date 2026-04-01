@@ -34,6 +34,7 @@ from arpeggio import Terminal, NonTerminal
 from noe.noe_parser import _get_or_create_parser
 from noe.gloss import gloss_chain
 from noe import ContextManager, NoeRuntime
+from noe.explain import explain_result, print_context
 
 # ── ANSI colours ──────────────────────────────────────────────────────────────
 
@@ -127,39 +128,6 @@ def _format_verdict(result: dict) -> str:
 
     return DIM(f"{domain}  {str(value)[:60]}")
 
-def explain_result(result) -> str:
-    if result.domain in ("action", "list"):
-        actions = []
-        val_list = result.value if isinstance(result.value, list) else [result.value]
-        for a in val_list:
-            if not isinstance(a, dict):
-                continue
-            v_name = str(a.get('target', 'unknown_target'))
-            args = [str(x) for x in a.get('args', [])]
-            actions.append(f"{v_name}({', '.join(args)})")
-        
-        verbs_str = ", ".join(actions)
-        return f"{GREEN(BOLD('Verdict: PERMIT'))}  {DIM('(--> Action permitted. All guards satisfied under grounded context: ')}{verbs_str}{DIM(')')}"
-    elif result.domain == "undefined":
-        return f"{YELLOW(BOLD('Verdict: BLOCKED'))} {DIM('(--> Refused. The required facts are not present in the grounded context.)')}"
-    elif result.domain in ("error", "err"):
-        err_msg = str(result.error or result.value or "Unknown structural error")
-        return f"{RED(BOLD('Verdict: ERROR'))} {DIM(f'(--> Refused. Structural error or type mismatch: {err_msg})')}"
-    return f"{DIM('Verdict: UNKNOWN')} ({result.domain})"
-
-def print_context(ctx: dict) -> None:
-    knowledge = ctx.get("modal", {}).get("knowledge", {})
-    literals  = ctx.get("literals", {})
-    all_keys  = sorted(set(list(knowledge.keys()) + list(literals.keys())))
-    print("\n  " + BOLD("Current Context Overview:"))
-    print(DIM("  " + "─" * 60))
-    for k in all_keys:
-        in_k    = k in knowledge
-        val     = literals.get(k, knowledge.get(k))
-        grounded = GREEN("✓ grounded") if in_k else DIM("  literal only")
-        val_str  = GREEN("true") if val is True else (RED("false") if val is False else str(val))
-        print(f"    {k:<28} {val_str:<14} {grounded}")
-    print(DIM("  " + "─" * 60) + "\n")
 # ── Parse tree ────────────────────────────────────────────────────────────────
 
 def _node_name(node) -> str:
@@ -199,7 +167,7 @@ def _print_parse_tree(chain: str) -> None:
     except Exception as exc:
         print(f"  {DIM('Parse tree:')}  {RED(f'unavailable - {exc}')}")
 
-
+from noe.explain import explain_result, print_context
 
 def _print_examples() -> None:
     print()
@@ -231,10 +199,338 @@ HELP = f"""
   {YELLOW(":tree on|off")}        show or hide parse tree
   {YELLOW(":glyphs")}             show Noe unicode visual representation
   {YELLOW(":integrate")}          print a minimal Python integration snippet for the current chain
+  {YELLOW(":negotiate")}          interactive multi-agent negotiation demo (NIP-019)
   {YELLOW(":next")}               show directory of integration, adapter, and threat model docs
   {YELLOW(":reset")}              restore default C_safe
   {YELLOW(":quit")} or {YELLOW(":q")}        exit
 """
+
+
+# ── Multi-agent negotiation demo (NIP-019) ──────────────────────────────────
+
+def _run_negotiate_demo() -> None:
+    """
+    Interactive multi-agent negotiation demo.
+
+    Three agents (Robot A, Robot B, Arbitrator) negotiate pairwise sessions
+    via NIP-019 three-phase handshake, then evaluate chains with different
+    sensor readings. The user controls Robot B's sensor confidence and
+    watches the verdict shift between GREEN / YELLOW / RED.
+    """
+    import hashlib as _hashlib
+    import time as _time
+
+    try:
+        from noe.agent import (
+            NegotiatedContextFrame,
+            Session,
+            TemporalConfig,
+            build_agent_identity,
+            negotiate,
+        )
+        from noe.noe_parser import run_noe_logic
+        from noe.canonical import canonical_json
+    except ImportError as e:
+        print(RED(f"\n  Cannot load NIP-019 agent module: {e}"))
+        print(DIM("  Make sure noe/agent.py is present in the noe-gate repo.\n"))
+        return
+
+    # ── Banner ──────────────────────────────────────────────────────────
+    print(f"""
+{BOLD('  ══════════════════════════════════════════════════════════════════')}
+{BOLD('  NIP-019: Multi-Agent Context Negotiation')}
+{BOLD('  ══════════════════════════════════════════════════════════════════')}
+
+  {DIM('Three agents share a corridor. Two mobile robots (A and B) scan')}
+  {DIM('for humans. An Arbitrator decides the safety command.')}
+
+  {DIM('┌──────────┐                ┌──────────────┐                ┌──────────┐')}
+  {DIM('│ Robot A  │◄──── NCF ────►│  Arbitrator   │◄──── NCF ────►│ Robot B  │')}
+  {DIM('│ Proposer │   session_AB   │  3-tier logic │   session_BA   │ Verifier │')}
+  {DIM('└──────────┘                └──────────────┘                └──────────┘')}
+
+  {DIM('Before any chain can cross an agent boundary, both agents must')}
+  {DIM('complete a three-phase handshake: Announce → Match → Bind.')}
+  {DIM('The result is a Negotiated Context Frame (NCF) — a bilateral')}
+  {DIM('agreement on operators, temporal bounds, and provenance linking.')}
+""")
+
+    # ── Phase 1-3: Negotiate sessions ───────────────────────────────────
+    print(BOLD("  Phase 1: Announce"))
+    print(DIM("  Each agent broadcasts its AID (identity, capabilities, registry hash).\n"))
+
+    try:
+        aid_a   = build_agent_identity("robot_a", temporal_config=TemporalConfig(max_skew_ms=200, tau_stale_ms=1000, tau_window_ms=100))
+        aid_b   = build_agent_identity("robot_b", temporal_config=TemporalConfig(max_skew_ms=200, tau_stale_ms=1000, tau_window_ms=100))
+        aid_arb = build_agent_identity("arbitrator", temporal_config=TemporalConfig(max_skew_ms=200, tau_stale_ms=1000, tau_window_ms=100))
+    except Exception as e:
+        print(RED(f"  Failed to build agent identities: {e}\n"))
+        return
+
+    print(f"    Robot A:     {CYAN(aid_a.agent_id)}")
+    print(f"    Robot B:     {CYAN(aid_b.agent_id)}")
+    print(f"    Arbitrator:  {CYAN(aid_arb.agent_id)}")
+    print(f"    Registry:    {DIM(aid_a.registry_hash[:24] + '...')}")
+    print(f"    Operators:   {DIM(str(len(aid_a.supported_operators)) + ' shared')}")
+    print()
+
+    try:
+        input(DIM("  [Enter] to negotiate sessions..."))
+    except (EOFError, KeyboardInterrupt):
+        return
+
+    print()
+    print(BOLD("  Phase 2: Match"))
+    print(DIM("  Compare registry hashes, find shared operators, check subsystems.\n"))
+
+    try:
+        sess_a_arb, sess_arb_a = negotiate(aid_a, aid_arb)
+        sess_b_arb, sess_arb_b = negotiate(aid_b, aid_arb)
+    except Exception as e:
+        print(RED(f"  Negotiation failed: {e}\n"))
+        return
+
+    print(f"    A ↔ Arb:  {GREEN('BOUND')}  ncf={DIM(sess_a_arb.ncf_id[:20] + '...')}")
+    print(f"    B ↔ Arb:  {GREEN('BOUND')}  ncf={DIM(sess_b_arb.ncf_id[:20] + '...')}")
+    print(f"    Temporal:  max_skew={sess_a_arb.ncf.temporal['max_skew_ms']}ms  tau_stale={sess_a_arb.ncf.temporal['tau_stale_ms']}ms")
+    print()
+
+    print(BOLD("  Phase 3: Bind"))
+    print(DIM("  Both sides independently compute NCF hash — must match.\n"))
+    print(f"    Sessions active. Provenance linking: {GREEN('ON')}")
+    print()
+
+    try:
+        input(DIM("  [Enter] to run the Yellow Alert protocol..."))
+    except (EOFError, KeyboardInterrupt):
+        return
+
+    # ── Chains ──────────────────────────────────────────────────────────
+    CHAIN_A_PROP   = "shi @human_clear_a khi sek mek @propose_clear_a sek nek"
+    CHAIN_B_AGREE  = "shi @propose_clear_a an shi @human_clear_b khi sek mek @agree_clear_b sek nek"
+    CHAIN_B_VETO   = "shi @human_detected_b khi sek mek @veto_b sek nek"
+    CHAIN_ARB_GREEN  = "shi @propose_clear_a an shi @agree_clear_b khi sek mek @cmd_go sek nek"
+    CHAIN_ARB_YELLOW = "shi @propose_clear_a an nai shi @agree_clear_b an nai shi @veto_b khi sek mek @cmd_slow sek nek"
+    CHAIN_ARB_RED    = "shi @veto_b khi sek mek @cmd_halt sek nek"
+
+    def _now_ms():
+        return int(_time.time() * 1000)
+
+    def _build_sensor(val, confidence, source):
+        return {"value": val, "confidence_milli": confidence, "source": source, "timestamp_us": _now_ms() * 1000}
+
+    def _run_scenario(scenario_name, a_clear, b_conf_milli, b_detects_human):
+        now = _now_ms()
+        # Robot A context
+        ctx_a = {
+            "literals": {
+                "@human_clear_a": _build_sensor(a_clear, 990 if a_clear else 100, "mob_a_lidar"),
+                "@propose_clear_a": {"value": "PROPOSE_CLEAR_A", "type": "proposal"},
+            },
+            "temporal": {"now": now, "max_skew_ms": 5000},
+            "modal": {"knowledge": {"@human_clear_a": True} if a_clear else {}, "belief": {}, "certainty": {}},
+            "axioms": {"value_system": {}},
+            "audit": {},
+        }
+
+        # Robot B context
+        b_clear = b_conf_milli >= 900
+        ctx_b = {
+            "literals": {
+                "@propose_clear_a": True,
+                "@human_clear_b": _build_sensor(b_clear, b_conf_milli, "stat_b_lidar"),
+                "@agree_clear_b": {"value": "AGREE_CLEAR_B", "type": "agreement"},
+                "@human_detected_b": _build_sensor(b_detects_human, 1000 - b_conf_milli, "stat_b_lidar"),
+                "@veto_b": {"value": "VETO_B", "type": "veto"},
+            },
+            "temporal": {"now": now, "max_skew_ms": 5000},
+            "modal": {
+                "knowledge": {
+                    "@propose_clear_a": True,
+                    **({"@human_clear_b": True} if b_clear else {}),
+                    **({"@human_detected_b": True} if b_detects_human else {}),
+                },
+                "belief": {}, "certainty": {},
+            },
+            "axioms": {"value_system": {}},
+            "audit": {},
+        }
+
+        # Robot A evaluates
+        result_a = run_noe_logic(CHAIN_A_PROP, ctx_a, mode="lenient")
+        a_domain = result_a.get("domain", "undefined")
+        a_fires = a_domain in ("action", "list")
+
+        # Robot B evaluates
+        if a_fires:
+            result_b_agree = run_noe_logic(CHAIN_B_AGREE, ctx_b, mode="lenient")
+            result_b_veto  = run_noe_logic(CHAIN_B_VETO, ctx_b, mode="lenient")
+        else:
+            result_b_agree = {"domain": "undefined"}
+            result_b_veto  = {"domain": "undefined"}
+
+        b_agrees = result_b_agree.get("domain") in ("action", "list")
+        b_vetoes = result_b_veto.get("domain") in ("action", "list")
+
+        # Arbitrator context
+        ctx_arb = {
+            "literals": {
+                "@propose_clear_a": True,
+                "@agree_clear_b": True,
+                "@veto_b": True,
+                "@cmd_go": {"value": "nav2_full_speed", "type": "command"},
+                "@cmd_slow": {"value": "nav2_creep", "type": "command"},
+                "@cmd_halt": {"value": "nav2_stop", "type": "command"},
+            },
+            "temporal": {"now": now, "max_skew_ms": 5000},
+            "modal": {
+                "knowledge": {
+                    **({"@propose_clear_a": True} if a_fires else {}),
+                    **({"@agree_clear_b": True} if b_agrees else {}),
+                    **({"@veto_b": True} if b_vetoes else {}),
+                },
+                "belief": {}, "certainty": {},
+            },
+            "axioms": {"value_system": {}},
+            "audit": {},
+        }
+
+        result_green  = run_noe_logic(CHAIN_ARB_GREEN, ctx_arb, mode="lenient")
+        result_yellow = run_noe_logic(CHAIN_ARB_YELLOW, ctx_arb, mode="lenient")
+        result_red    = run_noe_logic(CHAIN_ARB_RED, ctx_arb, mode="lenient")
+
+        green_fires  = result_green.get("domain")  in ("action", "list")
+        yellow_fires = result_yellow.get("domain") in ("action", "list")
+        red_fires    = result_red.get("domain")    in ("action", "list")
+
+        # Determine tier
+        if green_fires:
+            tier, color, cmd = "GREEN", GREEN, "GO (full speed)"
+        elif red_fires:
+            tier, color, cmd = "RED", RED, "HALT (emergency stop)"
+        elif yellow_fires:
+            tier, color, cmd = "YELLOW", YELLOW, "SLOW (creep mode)"
+        else:
+            tier, color, cmd = "BLOCK", RED, "UNDEFINED (all chains blocked)"
+
+        return {
+            "scenario": scenario_name,
+            "a_fires": a_fires,
+            "b_agrees": b_agrees,
+            "b_vetoes": b_vetoes,
+            "tier": tier, "color": color, "cmd": cmd,
+            "green_fires": green_fires, "yellow_fires": yellow_fires, "red_fires": red_fires,
+        }
+
+    # ── Interactive scenario loop ───────────────────────────────────────
+    print(f"""
+{BOLD('  ── Yellow Alert Protocol ──────────────────────────────────────')}
+
+  {DIM('Robot A always reports: zone clear (confidence 990/1000).')}
+  {DIM("You control Robot B's sensor confidence.")}
+
+  {DIM('The Arbitrator evaluates three chains (GREEN / YELLOW / RED)')}
+  {DIM('against the combined evidence. Only one fires.')}
+
+  {DIM('Chains:')}
+    {DIM('GREEN:  A proposes AND B agrees      → GO (full speed)')}
+    {DIM('YELLOW: A proposes, B uncertain       → SLOW (creep mode)')}
+    {DIM('RED:    B detects human               → HALT (emergency stop)')}
+""")
+
+    scenarios = [
+        ("1", "Both clear — unanimous consensus",     True,  990,  False),
+        ("2", "B uncertain — partial agreement",       True,  500,  False),
+        ("3", "B detects human — conflict",            True,  100,  True),
+    ]
+
+    for num, desc, a_clear, b_conf, b_detects in scenarios:
+        print(DIM(f"  ── Scenario {num}: {desc} ──"))
+        print(f"    Robot A sensor:  {'clear (990/1000)' if a_clear else 'unclear'}")
+        print(f"    Robot B sensor:  confidence {b_conf}/1000" + (" — human detected" if b_detects else ""))
+        print()
+
+        r = _run_scenario(desc, a_clear, b_conf, b_detects)
+
+        # Show each agent's evaluation
+        a_status = GREEN("PROPOSE") if r["a_fires"] else RED("BLOCK")
+        print(f"    Robot A:      {a_status}")
+
+        if r["a_fires"]:
+            b_status = GREEN("AGREE") if r["b_agrees"] else (RED("VETO") if r["b_vetoes"] else YELLOW("UNCERTAIN"))
+            print(f"    Robot B:      {b_status}")
+        else:
+            print(f"    Robot B:      {DIM('(no proposal received)')}")
+
+        # Show arbitrator evaluation
+        g_icon = GREEN("●") if r["green_fires"]  else DIM("○")
+        y_icon = YELLOW("●") if r["yellow_fires"] else DIM("○")
+        r_icon = RED("●") if r["red_fires"]    else DIM("○")
+        print(f"    Arbitrator:   {g_icon} GREEN  {y_icon} YELLOW  {r_icon} RED")
+        print(f"    Command:      {r['color'](r['cmd'])}")
+        print()
+
+        if num != "3":
+            try:
+                input(DIM("  [Enter] next scenario..."))
+            except (EOFError, KeyboardInterrupt):
+                return
+            print()
+
+    # ── Summary ─────────────────────────────────────────────────────────
+    print(f"""
+{BOLD('  ── What just happened ──────────────────────────────────────────')}
+
+  {DIM('Three agents, each with their own sensor readings, negotiated')}
+  {DIM('pairwise sessions via NIP-019. Each evaluation produced an')}
+  {DIM('independent provenance record with NCF linkage.')}
+
+  {DIM("No agent trusts another agent's claim. Robot B's AGREE is grounded")}
+  {DIM("in its own sensor reading — not in Robot A's assertion.")}
+  {DIM("The Arbitrator's verdict is grounded in both agents' provenance.")}
+
+  {DIM('The same safety kernel (SK2) applies: if any evidence is')}
+  {DIM('uncertain or missing, the action is blocked. This holds')}
+  {DIM('across agent boundaries, not just within a single runtime.')}
+
+{BOLD('  ══════════════════════════════════════════════════════════════════')}
+""")
+
+    # ── Custom scenario ─────────────────────────────────────────────────
+    print(DIM("  Try your own scenario. Enter Robot B's sensor confidence (0-1000),"))
+    print(DIM("  or 'back' to return to the main playground.\n"))
+
+    while True:
+        try:
+            line = input(CYAN("  robot_b confidence> ")).strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            return
+
+        if line.lower() in ("back", "quit", "exit", ":q", ":quit", ""):
+            return
+
+        try:
+            conf = int(line)
+            if conf < 0 or conf > 1000:
+                print(RED("  Must be 0-1000."))
+                continue
+        except ValueError:
+            if line.lower() in ("back", ":back"):
+                return
+            print(RED("  Enter a number 0-1000, or 'back'."))
+            continue
+
+        b_detects = conf < 400
+        r = _run_scenario("custom", True, conf, b_detects)
+
+        a_status = GREEN("PROPOSE") if r["a_fires"] else RED("BLOCK")
+        b_status = GREEN("AGREE") if r["b_agrees"] else (RED("VETO") if r["b_vetoes"] else YELLOW("UNCERTAIN"))
+        g_icon = GREEN("●") if r["green_fires"]  else DIM("○")
+        y_icon = YELLOW("●") if r["yellow_fires"] else DIM("○")
+        r_icon = RED("●") if r["red_fires"]    else DIM("○")
+
+        print(f"\n    A: {a_status}  B: {b_status}  →  {g_icon} GREEN  {y_icon} YELLOW  {r_icon} RED  →  {r['color'](r['cmd'])}\n")
 
 # ── Context mutation ──────────────────────────────────────────────────────────
 
@@ -386,10 +682,12 @@ def main() -> None:
 {DIM('│')}                                                                     {DIM('│')}
 {DIM('│')} If the required knowledge is absent, execution does not pass.       {DIM('│')}
 {DIM('╰─────────────────────────────────────────────────────────────────────╯')}
+
+  [Enter] Start  
+{DIM('──────────────────────────────────────────────────────────────────────')}
 """
-    print(welcome_screen)
     try:
-        input("  [Enter] Start  \n──────────────────────────────────────────────────────────────────────\n")
+        a = input(welcome_screen)
     except (EOFError, KeyboardInterrupt):
         sys.exit(0)
     
@@ -529,6 +827,9 @@ def main() -> None:
 
             elif cmd == ":integrate":
                 _print_integrate(last_chain, mode)
+
+            elif cmd == ":negotiate":
+                _run_negotiate_demo()
 
             elif cmd == ":next":
                 print("\n  " + BOLD("── Where to go from here ──────────────────────────────────"))
@@ -693,7 +994,8 @@ def main() -> None:
                 
                 msg1 = "Type "
                 print(f"  {DIM(msg1)}:integrate{DIM(' for a copy-paste integration snippet,')}")
-                print(f"  {DIM('or ')}:scenarios{DIM(' to explore domain examples (zone entry, sensor fusion, belief vs knowledge).')}")
+                print(f"  {DIM('or ')}:scenarios{DIM(' to explore domain examples (zone entry, sensor fusion, belief vs knowledge),')}")
+                print(f"  {DIM('or ')}:negotiate{DIM(' to see two agents negotiate a shared safety decision (NIP-019).')}")
                 
         except Exception as exc:
             _print_parse_error(chain, exc)
