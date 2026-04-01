@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-PATROL_XML_PATH = Path(__file__).parent.parent.parent / "examples" / "btcpp_converter" / "patrol_robot.xml"
+PATROL_XML_PATH = Path(__file__).parent.parent.parent.parent / "examples" / "btcpp_converter" / "patrol_robot.xml"
 
 
 class TestImportPath:
