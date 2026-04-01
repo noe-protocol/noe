@@ -31,8 +31,10 @@ import readline  # enables arrow-key history
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 
 from arpeggio import Terminal, NonTerminal
-from noe.noe_parser import run_noe_logic, _get_or_create_parser
+from noe.noe_parser import _get_or_create_parser
 from noe.gloss import gloss_chain
+from noe import ContextManager, NoeRuntime
+from noe.explain import explain_result, print_context
 
 # ── ANSI colours ──────────────────────────────────────────────────────────────
 
@@ -44,7 +46,7 @@ RED    = lambda t: _c("91", t)
 YELLOW = lambda t: _c("93", t)
 CYAN   = lambda t: _c("96", t)
 DIM    = lambda t: _c("2",  t)
-BOLD   = lambda t: _c("1",  t)
+BOLD   = lambda t: t
 
 # ── Built-in examples ─────────────────────────────────────────────────────────
 
@@ -62,7 +64,7 @@ def _default_context() -> dict:
     now_ms = int(time.time() * 1000)
     # Epistemic literals (conditions): True = grounded in knowledge, False = literal only
     cond_literals = {
-        "@human_present":       True,
+        "@human_present":       False,
         "@path_clear":          True,
         "@controller_ready":    True,
         "@temperature_ok":      True,
@@ -72,13 +74,19 @@ def _default_context() -> dict:
         "@obstacle_detected":   False,
         "@door_open":           True,
         "@sensor_fresh":        True,
+        "@lidar_zone_clear":    True,
+        "@camera_no_human":     True,
+        "@estop_released":      True,
     }
     # Action target literals (mek targets): required by strict mode for action resolution
     action_literals = {
-        "@move_forward":   "fwd_target",
-        "@release_pallet": "pallet_release",
-        "@stop":           "stop_cmd",
-        "@send_email":     "email_target",
+        "@move_forward":        "fwd_target",
+        "@release_pallet":      "pallet_release",
+        "@stop":                "stop_cmd",
+        "@send_email":          "email_target",
+        "@enter_zone_alpha":    "zone_alpha_target",
+        "@enter_room":          "room_target",
+        "@resume_operations":   "resume_cmd",
     }
     knowledge = {k: v for k, v in cond_literals.items() if v is True}
     return {
@@ -159,26 +167,7 @@ def _print_parse_tree(chain: str) -> None:
     except Exception as exc:
         print(f"  {DIM('Parse tree:')}  {RED(f'unavailable - {exc}')}")
 
-# ── Context display ───────────────────────────────────────────────────────────
-
-def _print_context(ctx: dict) -> None:
-    knowledge = ctx.get("modal", {}).get("knowledge", {})
-    literals  = ctx.get("literals", {})
-    all_keys  = sorted(set(list(knowledge.keys()) + list(literals.keys())))
-    print()
-    print(BOLD("  Current context:"))
-    print(DIM("  " + "─" * 60))
-    for k in all_keys:
-        in_k    = k in knowledge
-        val     = literals.get(k, knowledge.get(k))
-        grounded = GREEN("✓ grounded") if in_k else DIM("  literal only")
-        val_str  = GREEN("true") if val is True else (RED("false") if val is False else str(val))
-        print(f"    {k:<28} {val_str:<14} {grounded}")
-    print(DIM("  " + "─" * 60))
-    print(DIM("  Use :set @literal true/false or :unset @literal to modify."))
-    print()
-
-# ── Examples display ──────────────────────────────────────────────────────────
+from noe.explain import explain_result, print_context
 
 def _print_examples() -> None:
     print()
@@ -200,6 +189,7 @@ HELP = f"""
 {CYAN("Commands:")}
   {YELLOW(":help")}               show this help
   {YELLOW(":examples")}           print example chains
+  {YELLOW(":scenarios")}          run curated permit/blocked scenarios
   {YELLOW(":context")}            print current context
   {YELLOW(":set @lit true")}      add @lit to C_safe as true (grounded)
   {YELLOW(":set @lit false")}     set @lit to false (literal only, not grounded)
@@ -207,18 +197,12 @@ HELP = f"""
   {YELLOW(":mode strict")}        evaluate in strict mode (default - real Noe semantics)
   {YELLOW(":mode partial")}       evaluate in partial mode (relaxed grounding)
   {YELLOW(":tree on|off")}        show or hide parse tree
+  {YELLOW(":glyphs")}             show Noe unicode visual representation
   {YELLOW(":integrate")}          print a minimal Python integration snippet for the current chain
+  {YELLOW(":next")}               show directory of integration, adapter, and threat model docs
   {YELLOW(":reset")}              restore default C_safe
   {YELLOW(":quit")} or {YELLOW(":q")}        exit
 """
-
-COLD_START = (
-    f"\n  {BOLD('Noe Gate')}  {DIM('— epistemic safety chains for physical systems')}\n"
-    f"  {DIM('The gate between a planner')}"
-    f"{DIM(chr(39))}{DIM('s intent and a robot')}{DIM(chr(39))}{DIM('s actuator.')}\n"
-    f"  {CYAN('Try:')} shi @path_clear khi sek mek @move_forward sek nek"
-    f"   {DIM('(then: :set @path_clear false)')}\n"
-)
 
 # ── Context mutation ──────────────────────────────────────────────────────────
 
@@ -239,84 +223,213 @@ def _unset_context(ctx: dict, literal: str) -> None:
 # ── Integration snippet ───────────────────────────────────────────────────────
 
 def _print_integrate(chain: str, mode: str) -> None:
-    # Produces a self-contained snippet the developer can drop into their project.
-    # The chain and mode are pre-filled from the current session state.
-    snippet = f'''
-import sys, os
-sys.path.insert(0, "/path/to/noe_reference")  # adjust to your checkout
-from noe.noe_parser import run_noe_logic
+    # 1. Extract predicates (following shi/vek) and actions (following mek/men)
+    preds, actions = [], []
+    tokens = chain.split()
+    for i, t in enumerate(tokens):
+        if t.startswith("@"):
+            if i > 0 and tokens[i-1] in ("mek", "men"):
+                if t not in actions: actions.append(t)
+            else:
+                if t not in preds: preds.append(t)
 
-context = {{  # replace with your grounded context dict
-    "modal":    {{"knowledge": {{"@path_clear": True}}, "belief": {{}}, "certainty": {{}}}},
-    "temporal": {{"now": 0, "max_skew_ms": 5000}},
-    "spatial":  {{"thresholds": {{"near": 300.0, "far": 2000.0}}}},
-    "literals": {{"@path_clear": True, "@move_forward": "fwd_target"}},
-    "axioms":   {{"value_system": {{"accepted": [], "rejected": []}}}},
-    "audit": {{}}, "entities": {{}}, "rel": {{}}, "demonstratives": {{}},
+    kn_str = ", ".join([f'"{p}": True' for p in preds]) if preds else ""
+    
+    lit_items = [f'"{p}": True' for p in preds]
+    for i, a in enumerate(actions):
+        lit_items.append(f'"{a}": "tgt_{i}"')
+    lit_str = ", ".join(lit_items) if lit_items else ""
+
+    snippet = f'''
+from noe import parse_chain, evaluate
+
+chain = parse_chain({chain!r})
+
+# Minimum context required to evaluate
+context = {{
+    "modal": {{"knowledge": {{{kn_str}}}}},
+    "literals": {{{lit_str}}}
 }}
 
-result = run_noe_logic(
-    {chain!r},
-    context,
-    mode={mode!r},  # "strict" for production; "partial" for development
-)
+result = evaluate(chain, context)
 
-if result["domain"] == "action":
-    print("PERMIT", result["value"]["target"])
-elif result["domain"] == "undefined":
+if getattr(result, "domain", "") == "action":
+    print("PERMIT", getattr(result, "value", "unknown_target"))
+elif getattr(result, "domain", "") == "undefined":
     print("BLOCK  — grounding missing from context")
 else:
-    print("ERROR ", result.get("code"), result.get("value"))
+    print("ERROR ", getattr(result, "code", getattr(result, "value", "")))
 '''
-    print()
-    print(BOLD("  Integration snippet:"))
-    print(DIM("  " + "─" * 60))
+    print("\n" + BOLD("  Minimal integration:"))
     for ln in snippet.strip().splitlines():
         print(f"    {CYAN(ln)}")
-    print(DIM("  " + "─" * 60))
-    print(DIM("  Copy into your project. Adjust sys.path and context to match your setup."))
-    print()
+    print("\n  " + DIM("The chain shown above is the one you last evaluated."))
+    print("  " + DIM("Swap in your own predicates and actions.\n"))
+    print(f"  {DIM('── Next steps ──────────────────────────────────────────────')}")
+    print(f"  Ready to build? Start here: {CYAN('docs/quickstart_llm_governance.md')}")
+    print(f"  For ROS2, threat model, or contributing: type {CYAN(':next')}")
+    print(f"  {DIM('───────────────────────────────────────────────────────────')}\n")
 
+
+def _print_parse_error(chain: str, exc: Exception) -> None:
+    exc_str = str(exc)
+    
+    if not chain.strip():
+        msg = "Empty chain"
+        fix = "Type a chain or :examples for reference"
+    elif chain.strip().endswith("sek"):
+        msg = "Missing chain terminator"
+        fix = "Add 'nek' (END) at the end"
+    elif 'mek' in chain and not ('sek' in chain and 'nek' in chain):
+        msg = "Missing scope close"
+        fix = "Add 'sek nek' to close the guarded block"
+    elif "Expected" in exc_str and "sek" in exc_str:
+        msg = "Missing scope close"
+        fix = "Add 'sek nek' to close the guarded block"
+    elif "=> 'mek" in exc_str or "=> 'men" in exc_str:
+        msg = "Action outside guarded block"
+        fix = "Wrap with 'khi sek mek @action sek nek'"
+    elif "=>" in exc_str and "Expected" in exc_str:
+        token_snippet = exc_str.split("=>")[-1].strip().strip("'")
+        msg = f"Unrecognized token: '{token_snippet}'"
+        fix = "Check your syntax or type :examples"
+    else:
+        if "Expected" in exc_str and "at position" in exc_str:
+            pos_part = exc_str.split("at position")[-1]
+            msg = "Syntax error"
+            fix = f"Failed at position {pos_part.strip()}"
+        else:
+            msg = "Syntax error"
+            fix = exc_str
+            
+    print(f"  {DIM('Verdict  :')}  {RED('ERROR')} — {msg}\n")
+    print(f"  This chain is structurally malformed.")
+    print(f"  {DIM('Expected :')} {fix}")
+
+
+def _print_filtered_context(chain: str, ctx: dict) -> None:
+    """Print only the context lines relevant to the evaluated chain."""
+    used_literals = {word for word in chain.split() if word.startswith("@")}
+    if not used_literals:
+        print_context(ctx)
+        return
+        
+    print(DIM("  ────────────────────────────────────────────────────────────"))
+    for lit in sorted(used_literals):
+        is_literal = lit in ctx.get("literals", {})
+        val = ctx.get("literals", {}).get(lit, "not_present")
+        is_grounded = lit in ctx.get("modal", {}).get("knowledge", {})
+        
+        val_str = str(val).lower() if isinstance(val, bool) else str(val)
+        status = GREEN("✓ grounded") if is_grounded else YELLOW("literal only")
+
+        if not is_literal:
+            print(f"    {lit:<28} {DIM('not in C_safe (undefined)')}")
+        else:
+            print(f"    {lit:<28} {val_str:<5}  {status}")
+    print(DIM("  ────────────────────────────────────────────────────────────"))
+    
+    # We only want to show the 'grounded'/'literal only' explanation once
+    if not getattr(_print_filtered_context, "has_run", False):
+        print(DIM("  (grounded = admitted as verified knowledge. literal only = present but not accepted as known)\n"))
+        _print_filtered_context.has_run = True
+    else:
+        print()
 
 # ── Main REPL ─────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    print(COLD_START)
+    try:
+        from noe.onboarding import show_framing_screen
+        show_framing_screen()
+    except Exception as e:
+        print(DIM(f"  Skipping interactive onboarding: {e}"))
 
     ctx       = _default_context()
     mode      = "strict"
-    show_tree = True
+    show_tree = False
+    show_glyphs = False
     last_chain = "shi @path_clear khi sek mek @move_forward sek nek"
+    
+    first_eval_done = False
+    first_block_done = False
+    first_conjunction_done = False
+
+    cm = ContextManager(root=ctx, domain={}, local=ctx)
+    rt = NoeRuntime(context_manager=cm, strict_mode=(mode=="strict"))
+
+    # Initial guided prompt
+    print("\n" + DIM("Let's evaluate a chain. This rule says: move forward may execute only if path_clear is known.\n"))
+    print(f"  {DIM('Gloss: ')} {YELLOW('KNOW @path_clear IF [ DO @move_forward ] END')}")
+    print(f"  {DIM('Chain: ')} {CYAN('shi @path_clear khi sek mek @move_forward sek nek')}\n")
+    print(DIM("Paste the chain below and press Enter."))
 
     while True:
         try:
-            line = input(CYAN(f"noe [{mode}]> ")).strip()
+            line = input(CYAN(f"\nnoe [{mode}]> ")).strip()
         except (EOFError, KeyboardInterrupt):
             print()
-            break
+            sys.exit(0)
 
         if not line:
             continue
 
         # ── Commands ────────────────────────────────────────────────────────
-        if line.startswith(":"):
-            parts = line.split()
-            cmd   = parts[0].lower()
+        parts = line.split()
+        cmd   = parts[0].lower() if parts else ""
 
-            if cmd in (":quit", ":q", ":exit"):
+        # Intercept commands (either explicit : commands, or known safe intercepts)
+        if cmd.startswith(":") or cmd in ("quit", "exit", "q", "help", "clear", "back", "menu"):
+            if cmd in (":quit", ":q", ":exit", "quit", "exit", "q"):
+                import sys
+                sys.exit(0)
+
+            elif cmd in (":menu", "menu", "back"):
                 break
 
-            elif cmd == ":help":
+            elif cmd in (":help", "help"):
                 print(HELP)
 
-            elif cmd == ":examples":
-                _print_examples()
+            elif cmd == ":examples" or cmd == ":scenarios":
+                print("\n  " + BOLD("Domain Scenarios"))
+                print(DIM("  ────────────────────────────────────────────────────────────"))
+                
+                print("  1. " + DIM("Multi-sensor zone entry (real-world):"))
+                print("     " + CYAN("shi @lidar_zone_clear an shi @camera_no_human an shi @estop_released khi sek mek @enter_zone_alpha sek nek"))
+                print("     " + DIM("KNOW @lidar_zone_clear AND KNOW @camera_no_human AND KNOW @estop_released IF [ DO @enter_zone_alpha ] END"))
+                print("     " + DIM("Why: No single sensor is sufficient. The gate requires independent grounding from each modality.\n"))
+                
+                print("  2. " + DIM("Guarded action (simple):"))
+                print("     " + CYAN("shi @path_clear khi sek mek @move_forward sek nek"))
+                print("     " + DIM("KNOW @path_clear IF [ DO @move_forward ] END\n"))
+                
+                print("  3. " + DIM("Belief vs knowledge:"))
+                print("     " + CYAN("vek @door_open khi sek mek @enter_room sek nek"))
+                print("     " + DIM("BELIEVE @door_open IF [ DO @enter_room ] END"))
+                print("     " + DIM("Why: 'vek' (BELIEVE) has a lower evidentiary threshold than 'shi' (KNOW)."))
+                print("     " + DIM("The chain makes the confidence level explicit and inspectable.\n"))
+                
+                print("  4. " + DIM("Negation (emergency stop override):"))
+                print("     " + CYAN("nai shi @human_present khi sek mek @resume_operations sek nek"))
+                print("     " + DIM("NOT KNOW @human_present IF [ DO @resume_operations ] END"))
+                print("     " + DIM("Why: Some actions should only proceed when a condition is NOT known."))
+                print("     " + DIM("The absence of grounding is itself a gating criterion.\n"))
+
+                print("  5. " + DIM("Malformed — missing scope close and terminator (ERROR):"))
+                print("     " + CYAN("shi @path_clear khi sek mek @move_forward"))
+                print("     " + DIM("(compare with correct form: shi @path_clear khi sek mek @move_forward sek nek)\n"))
+
+                print(DIM("  Copy any chain and paste it at the prompt."))
 
             elif cmd == ":context":
-                _print_context(ctx)
+                print("\n  " + BOLD("Current Context Components:"))
+                print_context(ctx)
+                print(DIM("  (grounded = admitted as verified knowledge. literal only = present but not accepted as known)\n"))
 
             elif cmd == ":reset":
                 ctx = _default_context()
+                cm = ContextManager(root=ctx, domain={}, local=ctx)
+                rt.context_manager = cm
                 print(DIM("  C_safe reset to defaults."))
 
             elif cmd == ":mode":
@@ -334,6 +447,13 @@ def main() -> None:
                     show_tree = (parts[1] == "on")
                     print(DIM(f"  Parse tree → {'on' if show_tree else 'off'}"))
 
+            elif cmd == ":glyphs":
+                if len(parts) < 2 or parts[1] not in ("on", "off"):
+                    print(RED("  Usage: :glyphs on | :glyphs off"))
+                else:
+                    show_glyphs = (parts[1] == "on")
+                    print(DIM(f"  Glyphs → {'on' if show_glyphs else 'off'}"))
+
             elif cmd == ":set":
                 if len(parts) < 3 or not parts[1].startswith("@"):
                     print(RED("  Usage: :set @literal true|false"))
@@ -345,7 +465,8 @@ def main() -> None:
                         print(GREEN(f"  {lit} → true (grounded)"))
                     elif val_str in ("false", "0", "no"):
                         _update_context(ctx, lit, False)
-                        print(YELLOW(f"  {lit} → false (literal only, not grounded)"))
+                        msg = "no longer admitted as known" if not first_eval_done or not first_block_done else "literal only, not grounded"
+                        print(YELLOW(f"  {lit} → false ({msg})"))
                     else:
                         print(RED(f"  Unknown value '{val_str}'. Use true or false."))
 
@@ -359,6 +480,34 @@ def main() -> None:
 
             elif cmd == ":integrate":
                 _print_integrate(last_chain, mode)
+
+            elif cmd == ":next":
+                print("\n  " + BOLD("── Where to go from here ──────────────────────────────────"))
+                print(f"  Python integration:    {CYAN('docs/quickstart_llm_governance.md')}")
+                print(f"  ROS2 adapter:          {CYAN('ros2_adapter/README.md')}")
+                print(f"  Threat model:          {CYAN('THREAT_MODEL.md')}")
+                print(f"  Conformance suite:     {CYAN('tests/nip011/README.md')}")
+                print(f"  Contribute:            {CYAN('github.com/noe-protocol/noe-gate/discussions')}")
+                print(f"  Issues:                {CYAN('github.com/noe-protocol/noe-gate/issues')}")
+                print(f"  {DIM('───────────────────────────────────────────────────────────')}\n")
+
+            elif cmd == ":cert":
+                import hashlib
+                chash = hashlib.sha256(last_chain.encode('utf-8')).hexdigest()
+                # Run evaluation quietly
+                rt_cert = NoeRuntime(context_manager=ContextManager(root=ctx, domain={}, local=ctx), strict_mode=(mode=="strict"))
+                res_cert = rt_cert.evaluate(last_chain)
+                ctx_hash = getattr(res_cert, "context_hash", "<uncomputed>")
+                ts = getattr(res_cert, "snapshot_ts", int(time.time()*1000))
+                dom = getattr(res_cert, "domain", "unknown").upper()
+                
+                print(f"  {BOLD('Certificate Record')}")
+                print(f"  {DIM('────────────────────────────────────────')}")
+                print(f"    {DIM('context_hash:')}  {CYAN(ctx_hash)}")
+                print(f"    {DIM('chain_hash:')}    {CYAN(chash)}")
+                print(f"    {DIM('verdict:')}       {RED(dom) if dom == 'UNDEFINED' else GREEN(dom)}")
+                print(f"    {DIM('timestamp_ms:')}  {CYAN(str(ts))}")
+                print(f"  {DIM('────────────────────────────────────────')}")
 
             else:
                 print(RED(f"  Unknown command '{cmd}'. Type :help."))
@@ -374,16 +523,131 @@ def main() -> None:
         print(f"  {DIM('Canonical:')}  {chain}")
         print(f"  {DIM('Gloss    :')}  {CYAN(glossed)}")
 
+        if show_glyphs:
+            if chain == "shi @path_clear khi sek mek @move_forward sek nek":
+                print(f"  {DIM('Glyphs   :')}  {CYAN('ʖ @path_clear ⟠ § 𐍀 @move_forward § —')}")
+            else:
+                print(f"  {DIM('Glyphs   :')}  {DIM('On-the-fly glyph generation not available for custom chains')}")
+
         if show_tree:
             _print_parse_tree(chain)
 
         try:
             ctx["temporal"]["now"] = int(time.time() * 1000)
-            result  = run_noe_logic(chain, ctx, mode=mode)
-            verdict = _format_verdict(result)
-            print(f"  {DIM('Verdict  :')}  {verdict}")
+            
+            rt = NoeRuntime(context_manager=ContextManager(root=ctx, domain={}, local=ctx), strict_mode=(mode=="strict"))
+            result = rt.evaluate(chain)
+
+            domain = getattr(result, "domain", "")
+            
+            if domain == "action":
+                target = getattr(getattr(result, "value", None), "target", getattr(result, "value", ""))
+                if not target and isinstance(getattr(result, "value", None), dict):
+                    target = result.value.get("target", "")
+                print(f"  {DIM('Verdict  :')}  {GREEN('PERMIT')} → {target}")
+            elif domain == "list":
+                targets = [v.get("target", "") for v in result.value if isinstance(v, dict)]
+                print(f"  {DIM('Verdict  :')}  {GREEN('PERMIT')} → {', '.join(targets)}")
+            elif domain == "undefined":
+                missing_lits = []
+                for word in chain.split():
+                    if word.startswith("@"):
+                        val = ctx.get("literals", {}).get(word)
+                        is_action = isinstance(val, str)
+                        if not is_action and not ctx.get("modal", {}).get("knowledge", {}).get(word, False):
+                            if word not in missing_lits:
+                                missing_lits.append(word)
+                
+                if missing_lits:
+                    missing_str = ", ".join(missing_lits)
+                    print(f"  {DIM('Verdict  :')}  {RED('BLOCK')} (undefined — {missing_str} not grounded in C_safe)")
+                else:
+                    print(f"  {DIM('Verdict  :')}  {RED('BLOCK')} (undefined — grounding missing from C_safe)")
+                
+                if first_block_done:
+                    print(f"\n  {DIM('Hint: Use ')}:set @literal true{DIM(' to ground missing predicates, or ')}:reset{DIM(' to restore defaults.')}")
+            elif domain == "error":
+                _print_parse_error(chain, result.value)
+            else:
+                if domain == "truth":
+                    print(f"  {DIM('Verdict  :')}  {YELLOW('TRUTH')} value={getattr(result, 'value', '')}")
+                else:
+                    print(f"  {DIM('Verdict  :')}  {explain_result(result)}")
+
+            # State Transitions
+            if not first_eval_done:
+                first_eval_done = True
+                if domain in ("action", "list"):
+                    # Only show the guided output if they evaluated and it permitted correctly
+                    print(f"\n  {DIM('Context (why it permitted):')}")
+                    _print_filtered_context(chain, ctx)
+                    m1 = "The gate didn't trust the proposal. It checked whether "
+                    print(f"  {DIM(m1)}@path_clear")
+                    m2 = "is grounded — verified by a sensor, adapter, or trusted source."
+                    print(f"  {DIM(m2)}")
+                    m3 = 'An LLM or planner asserting "path is clear" is not enough.'
+                    print(f"  {DIM(m3)}\n")
+                    print(f"  {DIM('Now try: ')}:set @path_clear false")
+                    print(f"  {DIM('Then re-run the same chain.')}")
+            elif domain == "undefined" and not first_block_done:
+                first_block_done = True
+                print()
+                _print_filtered_context(chain, ctx)
+                
+                m1 = "This is not a crash or an exception. BLOCK is a typed semantic outcome."
+                print(f"  {DIM(m1)}")
+                m2 = 'The gate distinguishes between "not permitted" (undefined) and'
+                print(f"  {DIM(m2)}")
+                m3 = '"structurally invalid" (error). Downstream systems can handle each differently.'
+                print(f"  {DIM(m3)}\n")
+                
+                print(f"  Same chain. Same code. Different context. Different verdict.")
+                print(f"  That is the execution boundary.\n")
+                
+                import hashlib
+                chash = hashlib.sha256(chain.encode('utf-8')).hexdigest()
+                ctx_hash = getattr(result, "context_hash", chash[:16] + "...")
+                print(f"  {BOLD('Certificate:')}")
+                print(f"    {DIM('context_hash:')}  {CYAN(ctx_hash)}")
+                print(f"    {DIM('chain_hash:')}    {CYAN(chash)}")
+                print(f"    {DIM('verdict:')}       {RED('BLOCK')}")
+                print(f"    {DIM('timestamp_ms:')}  {CYAN(str(getattr(result, 'snapshot_ts', int(time.time()*1000))))}\n")
+                
+                m1 = "This record is replayable. Another conforming runtime — Rust, C++,"
+                print(f"  {DIM(m1)}")
+                m2 = "a different machine — evaluating the same chain against the same context"
+                print(f"  {DIM(m2)}")
+                m3 = "will produce the same hashes. That's the basis for cross-system audit"
+                print(f"  {DIM(m3)}")
+                m4 = "and incident reconstruction."
+                print(f"  {DIM(m4)}\n")
+                
+                ctx.clear()
+                ctx.update(_default_context())
+                cm = ContextManager(root=ctx, domain={}, local=ctx)
+                print(f"  {DIM('Context restored to defaults.')}\n")
+                
+                print(f"  {DIM('Try a conjunction:')} shi @path_clear an shi @controller_ready khi sek mek @move_forward sek nek")
+                print(f"  {DIM('Type :help for commands, :scenarios for examples, or :integrate for a copy-paste snippet.')}")
+            
+            elif first_block_done and not first_conjunction_done and domain in ("action", "list") and " an " in chain:
+                first_conjunction_done = True
+                hdr = "You've seen:"
+                print(f"\n  {BOLD(hdr)}")
+                print(f"    {GREEN('✓')} {DIM('A chain evaluate to PERMIT under grounded context')}")
+                print(f"    {GREEN('✓')} {DIM('The same chain BLOCK when grounding is removed')}")
+                print(f"    {GREEN('✓')} {DIM('A certificate with replayable hashes')}")
+                print(f"    {GREEN('✓')} {DIM('A conjunction gate with multiple predicates')}\n")
+                
+                print(f"  {DIM('Real gates often require multiple independent checks — sensor fusion,')}")
+                print(f"  {DIM('human clearance, temporal freshness — composed in a single auditable chain.')}\n")
+                
+                msg1 = "Type "
+                print(f"  {DIM(msg1)}:integrate{DIM(' for a copy-paste integration snippet,')}")
+                print(f"  {DIM('or ')}:scenarios{DIM(' to explore domain examples (zone entry, sensor fusion, belief vs knowledge).')}")
+                
         except Exception as exc:
-            print(f"  {DIM('Verdict  :')}  {RED(f'PARSE ERROR - {exc}')}")
+            _print_parse_error(chain, exc)
 
         print()
 
