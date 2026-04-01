@@ -1,0 +1,1155 @@
+{
+  "type": "conformance_bridge",
+  "description": "Exhaustive comparison of Python implementation against Z3-verified K3 model",
+  "timestamp": "2026-04-01T05:12:11.380521Z",
+  "passes": {
+    "partial": {
+      "mode": "partial",
+      "description": "K3 evaluation core \u2014 missing literals become semantic undefined",
+      "total": 80,
+      "passed": 80,
+      "failed": 0,
+      "conformant": true,
+      "results": [
+        {
+          "name": "nai T",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "nai F",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "nai U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "T an T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "T an F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "T an U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "F an T",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "F an F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "F an U",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "U an T",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U an F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "U an U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "T ur T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "T ur F",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "T ur U",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "F ur T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "F ur F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "F ur U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U ur T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "U ur F",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U ur U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "T kra T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "T kra F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "T kra U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "F kra T",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "F kra F",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "F kra U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U kra T",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U kra F",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U kra U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "nai nai T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "nai nai F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "nai nai U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 T,T LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM1 T,T RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM1 T,F LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 T,F RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 T,U LHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 T,U RHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 F,T LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 F,T RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 F,F LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 F,F RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 F,U LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 F,U RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 U,T LHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 U,T RHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 U,F LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 U,F RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 U,U LHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 U,U RHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 T,T LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 T,T RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 T,F LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 T,F RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 T,U LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 T,U RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 F,T LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 F,T RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 F,F LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM2 F,F RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM2 F,U LHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 F,U RHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 U,T LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 U,T RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 U,F LHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 U,F RHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 U,U LHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 U,U RHS",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: F kra T = U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: F kra F = U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: F kra U = U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: U kra T = U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: U kra F = U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: U kra U = U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: nai U \u2260 T",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: U an U \u2260 T",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: U ur U \u2260 T",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: U kra U \u2260 T",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: nai(U an U) \u2260 T",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        }
+      ]
+    },
+    "strict": {
+      "mode": "strict",
+      "description": "NIP-009 production pipeline \u2014 missing literals rejected pre-evaluation",
+      "total": 80,
+      "passed": 68,
+      "failed": 12,
+      "conformant": false,
+      "results": [
+        {
+          "name": "nai T",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "nai F",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "nai U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "T an T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "T an F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "T an U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "F an T",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "F an F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "F an U",
+          "model": "F",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "U an T",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U an F",
+          "model": "F",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "U an U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "T ur T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "T ur F",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "T ur U",
+          "model": "T",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "F ur T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "F ur F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "F ur U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U ur T",
+          "model": "T",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "U ur F",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U ur U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "T kra T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "T kra F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "T kra U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "F kra T",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "F kra F",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "F kra U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U kra T",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U kra F",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "U kra U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "nai nai T",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "nai nai F",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "nai nai U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 T,T LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM1 T,T RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM1 T,F LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 T,F RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 T,U LHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 T,U RHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 F,T LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 F,T RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 F,F LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 F,F RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM1 F,U LHS",
+          "model": "T",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "DM1 F,U RHS",
+          "model": "T",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "DM1 U,T LHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 U,T RHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 U,F LHS",
+          "model": "T",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "DM1 U,F RHS",
+          "model": "T",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "DM1 U,U LHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM1 U,U RHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 T,T LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 T,T RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 T,F LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 T,F RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 T,U LHS",
+          "model": "F",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "DM2 T,U RHS",
+          "model": "F",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "DM2 F,T LHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 F,T RHS",
+          "model": "F",
+          "impl": "False",
+          "impl_normalized": "F",
+          "match": true
+        },
+        {
+          "name": "DM2 F,F LHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM2 F,F RHS",
+          "model": "T",
+          "impl": "True",
+          "impl_normalized": "T",
+          "match": true
+        },
+        {
+          "name": "DM2 F,U LHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 F,U RHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 U,T LHS",
+          "model": "F",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "DM2 U,T RHS",
+          "model": "F",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": false
+        },
+        {
+          "name": "DM2 U,F LHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 U,F RHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 U,U LHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "DM2 U,U RHS",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: F kra T = U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: F kra F = U",
+          "model": "U",
+          "impl": "undefined",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: F kra U = U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: U kra T = U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: U kra F = U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "Safety: U kra U = U",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: nai U \u2260 T",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: U an U \u2260 T",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: U ur U \u2260 T",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: U kra U \u2260 T",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        },
+        {
+          "name": "FailClosed: nai(U an U) \u2260 T",
+          "model": "U",
+          "impl": "error:ERR_LITERAL_MISSING",
+          "impl_normalized": "U",
+          "match": true
+        }
+      ]
+    }
+  },
+  "k3_core_conformant": true,
+  "strict_mode_conformant": false,
+  "coverage": "complete K3 domain (3^n for n-ary operators, 80 tests per pass)",
+  "analysis": {
+    "k3_operators_correct": true,
+    "strict_divergence_count": 12,
+    "strict_divergence_cause": "NIP-009 validation rejects chains referencing missing literals before K3 evaluation \u2014 deliberate safety contract"
+  }
+}
