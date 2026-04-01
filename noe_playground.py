@@ -121,7 +121,7 @@ def _format_verdict(result: dict) -> str:
         return YELLOW(f"TRUTH  value={value}")
 
     if domain == "undefined":
-        return RED("BLOCK  (undefined - grounding missing from C_safe)")
+        return RED("BLOCK (undefined - grounding missing from C_safe)")
 
     if domain in ("error", "err") or code:
         return RED(f"ERROR  {code or str(value)[:60]}")
@@ -237,22 +237,28 @@ def _run_negotiate_demo() -> None:
 
     # ── Banner ──────────────────────────────────────────────────────────
     print(f"""
-{BOLD('  ══════════════════════════════════════════════════════════════════')}
+{BOLD('  ================================================================')}
 {BOLD('  NIP-019: Multi-Agent Context Negotiation')}
-{BOLD('  ══════════════════════════════════════════════════════════════════')}
+{BOLD('  ================================================================')}
 
-  {DIM('Three agents share a corridor. Two mobile robots (A and B) scan')}
-  {DIM('for humans. An Arbitrator decides the safety command.')}
+  {DIM('Why this matters:')}
+  {DIM('Most multi-agent systems trust message passing. If Robot A says')}
+  {DIM('"zone is clear", Robot B acts on it. There is no verification,')}
+  {DIM('no audit trail, and no way to reconstruct what each agent knew.')}
 
-  {DIM('┌──────────┐                ┌──────────────┐                ┌──────────┐')}
-  {DIM('│ Robot A  │◄──── NCF ────►│  Arbitrator   │◄──── NCF ────►│ Robot B  │')}
-  {DIM('│ Proposer │   session_AB   │  3-tier logic │   session_BA   │ Verifier │')}
-  {DIM('└──────────┘                └──────────────┘                └──────────┘')}
-
+  {DIM('Noe requires every cross-agent claim to be independently grounded.')}
   {DIM('Before any chain can cross an agent boundary, both agents must')}
-  {DIM('complete a three-phase handshake: Announce → Match → Bind.')}
-  {DIM('The result is a Negotiated Context Frame (NCF) — a bilateral')}
+  {DIM('complete a three-phase handshake: Announce > Match > Bind.')}
+  {DIM('The result is a Negotiated Context Frame (NCF), a bilateral')}
   {DIM('agreement on operators, temporal bounds, and provenance linking.')}
+
+  {DIM('Three agents share a corridor:')}
+
+  {DIM('  Robot A (Proposer)  <-- NCF -->  Arbitrator  <-- NCF -->  Robot B (Verifier)')}
+  {DIM('  Scans with lidar       |        3-tier logic     |        Scans with lidar')}
+  {DIM('                         |        GREEN/YELLOW/RED  |                        ')}
+
+  {DIM('Each agent has its own sensors. No agent trusts another.')}
 """)
 
     # ── Phase 1-3: Negotiate sessions ───────────────────────────────────
@@ -290,13 +296,13 @@ def _run_negotiate_demo() -> None:
         print(RED(f"  Negotiation failed: {e}\n"))
         return
 
-    print(f"    A ↔ Arb:  {GREEN('BOUND')}  ncf={DIM(sess_a_arb.ncf_id[:20] + '...')}")
-    print(f"    B ↔ Arb:  {GREEN('BOUND')}  ncf={DIM(sess_b_arb.ncf_id[:20] + '...')}")
+    print(f"    A <> Arb:  {GREEN('BOUND')}  ncf={DIM(sess_a_arb.ncf_id[:20] + '...')}")
+    print(f"    B <> Arb:  {GREEN('BOUND')}  ncf={DIM(sess_b_arb.ncf_id[:20] + '...')}")
     print(f"    Temporal:  max_skew={sess_a_arb.ncf.temporal['max_skew_ms']}ms  tau_stale={sess_a_arb.ncf.temporal['tau_stale_ms']}ms")
     print()
 
     print(BOLD("  Phase 3: Bind"))
-    print(DIM("  Both sides independently compute NCF hash — must match.\n"))
+    print(DIM("  Both sides independently compute NCF hash. Must match.\n"))
     print(f"    Sessions active. Provenance linking: {GREEN('ON')}")
     print()
 
@@ -306,12 +312,16 @@ def _run_negotiate_demo() -> None:
         return
 
     # ── Chains ──────────────────────────────────────────────────────────
+    # Robot A and B use shi (KNOW) to check their own sensors
     CHAIN_A_PROP   = "shi @human_clear_a khi sek mek @propose_clear_a sek nek"
     CHAIN_B_AGREE  = "shi @propose_clear_a an shi @human_clear_b khi sek mek @agree_clear_b sek nek"
     CHAIN_B_VETO   = "shi @human_detected_b khi sek mek @veto_b sek nek"
-    CHAIN_ARB_GREEN  = "shi @propose_clear_a an shi @agree_clear_b khi sek mek @cmd_go sek nek"
-    CHAIN_ARB_YELLOW = "shi @propose_clear_a an nai shi @agree_clear_b an nai shi @veto_b khi sek mek @cmd_slow sek nek"
-    CHAIN_ARB_RED    = "shi @veto_b khi sek mek @cmd_halt sek nek"
+
+    # Arbitrator uses positive boolean flags (always grounded, True or False)
+    # This avoids the K3 problem where nai(UNDEFINED) = UNDEFINED
+    CHAIN_ARB_GREEN  = "shi @a_proposed an shi @b_agreed khi sek mek @cmd_go sek nek"
+    CHAIN_ARB_YELLOW = "shi @a_proposed an shi @b_uncertain khi sek mek @cmd_slow sek nek"
+    CHAIN_ARB_RED    = "shi @b_vetoed khi sek mek @cmd_halt sek nek"
 
     def _now_ms():
         return int(_time.time() * 1000)
@@ -371,13 +381,18 @@ def _run_negotiate_demo() -> None:
 
         b_agrees = result_b_agree.get("domain") in ("action", "list")
         b_vetoes = result_b_veto.get("domain") in ("action", "list")
+        b_uncertain = a_fires and not b_agrees and not b_vetoes
 
-        # Arbitrator context
+        # Arbitrator context: positive boolean flags, always grounded
+        # Each flag is either in knowledge (True) or absent (UNDEFINED).
+        # The YELLOW chain uses @b_uncertain as a positive signal,
+        # not the negation of @b_agreed (which would be UNDEFINED in K3).
         ctx_arb = {
             "literals": {
-                "@propose_clear_a": True,
-                "@agree_clear_b": True,
-                "@veto_b": True,
+                "@a_proposed": True,
+                "@b_agreed": True,
+                "@b_uncertain": True,
+                "@b_vetoed": True,
                 "@cmd_go": {"value": "nav2_full_speed", "type": "command"},
                 "@cmd_slow": {"value": "nav2_creep", "type": "command"},
                 "@cmd_halt": {"value": "nav2_stop", "type": "command"},
@@ -385,9 +400,10 @@ def _run_negotiate_demo() -> None:
             "temporal": {"now": now, "max_skew_ms": 5000},
             "modal": {
                 "knowledge": {
-                    **({"@propose_clear_a": True} if a_fires else {}),
-                    **({"@agree_clear_b": True} if b_agrees else {}),
-                    **({"@veto_b": True} if b_vetoes else {}),
+                    **({"@a_proposed": True} if a_fires else {}),
+                    **({"@b_agreed": True} if b_agrees else {}),
+                    **({"@b_uncertain": True} if b_uncertain else {}),
+                    **({"@b_vetoed": True} if b_vetoes else {}),
                 },
                 "belief": {}, "certainty": {},
             },
@@ -424,7 +440,7 @@ def _run_negotiate_demo() -> None:
 
     # ── Interactive scenario loop ───────────────────────────────────────
     print(f"""
-{BOLD('  ── Yellow Alert Protocol ──────────────────────────────────────')}
+{BOLD('  -- Yellow Alert Protocol -----------------------------------------')}
 
   {DIM('Robot A always reports: zone clear (confidence 990/1000).')}
   {DIM("You control Robot B's sensor confidence.")}
@@ -433,21 +449,21 @@ def _run_negotiate_demo() -> None:
   {DIM('against the combined evidence. Only one fires.')}
 
   {DIM('Chains:')}
-    {DIM('GREEN:  A proposes AND B agrees      → GO (full speed)')}
-    {DIM('YELLOW: A proposes, B uncertain       → SLOW (creep mode)')}
-    {DIM('RED:    B detects human               → HALT (emergency stop)')}
+    {DIM('GREEN:  A proposes AND B agrees       -> GO (full speed)')}
+    {DIM('YELLOW: A proposes AND B is uncertain  -> SLOW (creep mode)')}
+    {DIM('RED:    B detects human                -> HALT (emergency stop)')}
 """)
 
     scenarios = [
-        ("1", "Both clear — unanimous consensus",     True,  990,  False),
-        ("2", "B uncertain — partial agreement",       True,  500,  False),
-        ("3", "B detects human — conflict",            True,  100,  True),
+        ("1", "Both clear - unanimous consensus",     True,  990,  False),
+        ("2", "B uncertain - partial agreement",       True,  500,  False),
+        ("3", "B detects human - conflict",            True,  100,  True),
     ]
 
     for num, desc, a_clear, b_conf, b_detects in scenarios:
-        print(DIM(f"  ── Scenario {num}: {desc} ──"))
+        print(DIM(f"  -- Scenario {num}: {desc} --"))
         print(f"    Robot A sensor:  {'clear (990/1000)' if a_clear else 'unclear'}")
-        print(f"    Robot B sensor:  confidence {b_conf}/1000" + (" — human detected" if b_detects else ""))
+        print(f"    Robot B sensor:  confidence {b_conf}/1000" + (" + human detected" if b_detects else ""))
         print()
 
         r = _run_scenario(desc, a_clear, b_conf, b_detects)
@@ -463,9 +479,9 @@ def _run_negotiate_demo() -> None:
             print(f"    Robot B:      {DIM('(no proposal received)')}")
 
         # Show arbitrator evaluation
-        g_icon = GREEN("●") if r["green_fires"]  else DIM("○")
-        y_icon = YELLOW("●") if r["yellow_fires"] else DIM("○")
-        r_icon = RED("●") if r["red_fires"]    else DIM("○")
+        g_icon = GREEN("*") if r["green_fires"]  else DIM("o")
+        y_icon = YELLOW("*") if r["yellow_fires"] else DIM("o")
+        r_icon = RED("*") if r["red_fires"]    else DIM("o")
         print(f"    Arbitrator:   {g_icon} GREEN  {y_icon} YELLOW  {r_icon} RED")
         print(f"    Command:      {r['color'](r['cmd'])}")
         print()
@@ -479,36 +495,47 @@ def _run_negotiate_demo() -> None:
 
     # ── Summary ─────────────────────────────────────────────────────────
     print(f"""
-{BOLD('  ── What just happened ──────────────────────────────────────────')}
+{BOLD('  -- Why this matters ----------------------------------------------')}
 
-  {DIM('Three agents, each with their own sensor readings, negotiated')}
-  {DIM('pairwise sessions via NIP-019. Each evaluation produced an')}
-  {DIM('independent provenance record with NCF linkage.')}
+  {DIM('Without Noe, a typical multi-agent corridor scenario looks like this:')}
+  {DIM('Robot A publishes "zone clear" to a shared topic. Robot B subscribes')}
+  {DIM('and acts on it. If A is wrong, B has no independent check. If the')}
+  {DIM('message is stale, there is no temporal bound. If something goes wrong,')}
+  {DIM('there is no provenance record linking what each agent actually knew.')}
 
-  {DIM("No agent trusts another agent's claim. Robot B's AGREE is grounded")}
-  {DIM("in its own sensor reading — not in Robot A's assertion.")}
-  {DIM("The Arbitrator's verdict is grounded in both agents' provenance.")}
+  {DIM('What you just saw is different:')}
 
-  {DIM('The same safety kernel (SK2) applies: if any evidence is')}
-  {DIM('uncertain or missing, the action is blocked. This holds')}
-  {DIM('across agent boundaries, not just within a single runtime.')}
+    {GREEN('1.')} {DIM('Each agent evaluated its OWN sensor data against its OWN chain.')}
+    {GREEN('2.')} {DIM('The Arbitrator never trusted a claim. It checked grounded evidence.')}
+    {GREEN('3.')} {DIM('When B was uncertain (scenario 2), the system did not default to GO.')}
+       {DIM('It produced SLOW - a typed, auditable intermediate verdict.')}
+    {GREEN('4.')} {DIM('Every evaluation produced a provenance hash linked to the NCF.')}
+       {DIM('A different runtime, replaying the same context, gets the same hash.')}
 
-{BOLD('  ══════════════════════════════════════════════════════════════════')}
+  {DIM('This is the multi-agent extension of SK2: the safety kernel holds')}
+  {DIM('across agent boundaries, not just within a single process.')}
+
+{BOLD('  ================================================================')}
 """)
 
     # ── Custom scenario ─────────────────────────────────────────────────
     print(DIM("  Try your own scenario. Enter Robot B's sensor confidence (0-1000),"))
-    print(DIM("  or 'back' to return to the main playground.\n"))
+    print(DIM("  or type a command to continue.\n"))
 
     while True:
         try:
             line = input(CYAN("  robot_b confidence> ")).strip()
         except (EOFError, KeyboardInterrupt):
             print()
-            return
+            break
 
         if line.lower() in ("back", "quit", "exit", ":q", ":quit", ""):
-            return
+            break
+
+        if line.lower() in (":next", ":integrate", ":scenarios", ":help"):
+            # Return to main REPL and let it handle the command
+            print(DIM("  Returning to main playground...\n"))
+            break
 
         try:
             conf = int(line)
@@ -517,7 +544,7 @@ def _run_negotiate_demo() -> None:
                 continue
         except ValueError:
             if line.lower() in ("back", ":back"):
-                return
+                break
             print(RED("  Enter a number 0-1000, or 'back'."))
             continue
 
@@ -526,11 +553,19 @@ def _run_negotiate_demo() -> None:
 
         a_status = GREEN("PROPOSE") if r["a_fires"] else RED("BLOCK")
         b_status = GREEN("AGREE") if r["b_agrees"] else (RED("VETO") if r["b_vetoes"] else YELLOW("UNCERTAIN"))
-        g_icon = GREEN("●") if r["green_fires"]  else DIM("○")
-        y_icon = YELLOW("●") if r["yellow_fires"] else DIM("○")
-        r_icon = RED("●") if r["red_fires"]    else DIM("○")
+        g_icon = GREEN("*") if r["green_fires"]  else DIM("o")
+        y_icon = YELLOW("*") if r["yellow_fires"] else DIM("o")
+        r_icon = RED("*") if r["red_fires"]    else DIM("o")
 
-        print(f"\n    A: {a_status}  B: {b_status}  →  {g_icon} GREEN  {y_icon} YELLOW  {r_icon} RED  →  {r['color'](r['cmd'])}\n")
+        print(f"\n    A: {a_status}  B: {b_status}  ->  {g_icon} GREEN  {y_icon} YELLOW  {r_icon} RED  ->  {r['color'](r['cmd'])}\n")
+
+    # ── Post-negotiate routing ──────────────────────────────────────────
+    print(f"\n  {BOLD('-- Where to go from here ------------------------------------------')}")
+    print(f"    {CYAN(':integrate')}     Copy-paste Python integration snippet")
+    print(f"    {CYAN(':scenarios')}     Explore more domain examples (zone entry, belief, negation)")
+    print(f"    {CYAN(':next')}          Full directory: docs, ROS2 adapter, threat model, contributing")
+    print(f"    {CYAN(':help')}          All playground commands")
+    print(f"  {DIM('--------------------------------------------------------------------')}\n")
 
 # ── Context mutation ──────────────────────────────────────────────────────────
 
@@ -584,7 +619,7 @@ result = evaluate(chain, context)
 if getattr(result, "domain", "") == "action":
     print("PERMIT", getattr(result, "value", "unknown_target"))
 elif getattr(result, "domain", "") == "undefined":
-    print("BLOCK  — grounding missing from context")
+    print("BLOCK  - grounding missing from context")
 else:
     print("ERROR ", getattr(result, "code", getattr(result, "value", "")))
 '''
@@ -630,7 +665,7 @@ def _print_parse_error(chain: str, exc: Exception) -> None:
             msg = "Syntax error"
             fix = exc_str
             
-    print(f"  {DIM('Verdict  :')}  {RED('ERROR')} — {msg}\n")
+    print(f"  {DIM('Verdict  :')}  {RED('ERROR')} - {msg}\n")
     print(f"  This chain is structurally malformed.")
     print(f"  {DIM('Expected :')} {fix}")
 
@@ -668,7 +703,7 @@ def _print_filtered_context(chain: str, ctx: dict) -> None:
 
 def main() -> None:
     welcome_screen = f"""
-{RED('▽ Noe Gate 1.0 (main) — Deterministic action gating.')}
+{RED('▽ Noe Gate 1.0 (main) - Deterministic action gating.')}
 {BOLD(' ███    ██  ██████  ███████      ██████   █████  ████████ ███████')}
 {BOLD(' ████   ██ ██    ██ ██          ██       ██   ██    ██    ██     ')}
 {BOLD(' ██ ██  ██ ██    ██ █████       ██   ███ ███████    ██    █████  ')}
@@ -678,7 +713,7 @@ def main() -> None:
 
 {DIM('╭── Noe Gate ─────────────────────────────────────────────────────────╮')}
 {DIM('│')} Planners and LLMs propose actions. Noe Gate decides whether they    {DIM('│')}
-{DIM('│')} may execute. It checks grounded context — not trust, not intent.    {DIM('│')}
+{DIM('│')} may execute. It checks grounded context, not trust, not intent.     {DIM('│')}
 {DIM('│')}                                                                     {DIM('│')}
 {DIM('│')} If the required knowledge is absent, execution does not pass.       {DIM('│')}
 {DIM('╰─────────────────────────────────────────────────────────────────────╯')}
@@ -762,7 +797,7 @@ def main() -> None:
                 print("     " + DIM("Why: Some actions should only proceed when a condition is NOT known."))
                 print("     " + DIM("The absence of grounding is itself a gating criterion.\n"))
 
-                print("  5. " + DIM("Malformed — missing scope close and terminator (ERROR):"))
+                print("  5. " + DIM("Malformed - missing scope close and terminator (ERROR):"))
                 print("     " + CYAN("shi @path_clear khi sek mek @move_forward"))
                 print("     " + DIM("(compare with correct form: shi @path_clear khi sek mek @move_forward sek nek)\n"))
 
@@ -875,7 +910,7 @@ def main() -> None:
 
         if show_glyphs:
             if chain == "shi @path_clear khi sek mek @move_forward sek nek":
-                print(f"  {DIM('Glyphs   :')}  {CYAN('ʖ @path_clear ⟠ § 𐍀 @move_forward § —')}")
+                print(f"  {DIM('Glyphs   :')}  {CYAN('ʖ @path_clear ⟠ § 𐍀 @move_forward § -')}")
             else:
                 print(f"  {DIM('Glyphs   :')}  {DIM('On-the-fly glyph generation not available for custom chains')}")
 
@@ -910,9 +945,9 @@ def main() -> None:
                 
                 if missing_lits:
                     missing_str = ", ".join(missing_lits)
-                    print(f"  {DIM('Verdict  :')}  {RED('BLOCK')} (undefined — {missing_str} not grounded in C_safe)")
+                    print(f"  {DIM('Verdict  :')}  {RED('BLOCK')} (undefined - {missing_str} not grounded in C_safe)")
                 else:
-                    print(f"  {DIM('Verdict  :')}  {RED('BLOCK')} (undefined — grounding missing from C_safe)")
+                    print(f"  {DIM('Verdict  :')}  {RED('BLOCK')} (undefined - grounding missing from C_safe)")
                 
                 if first_block_done:
                     print(f"\n  {DIM('Hint: Use ')}:set @literal true{DIM(' to ground missing predicates, or ')}:reset{DIM(' to restore defaults.')}")
@@ -933,7 +968,7 @@ def main() -> None:
                     _print_filtered_context(chain, ctx)
                     m1 = "The gate didn't trust the proposal. It checked whether "
                     print(f"  {DIM(m1)}@path_clear")
-                    m2 = "is grounded — verified by a sensor, adapter, or trusted source."
+                    m2 = "is grounded - verified by a sensor, adapter, or trusted source."
                     print(f"  {DIM(m2)}")
                     m3 = 'An LLM or planner asserting "path is clear" is not enough.'
                     print(f"  {DIM(m3)}\n")
@@ -963,9 +998,9 @@ def main() -> None:
                 print(f"    {DIM('verdict:')}       {RED('BLOCK')}")
                 print(f"    {DIM('timestamp_ms:')}  {CYAN(str(getattr(result, 'snapshot_ts', int(time.time()*1000))))}\n")
                 
-                m1 = "This record is replayable. Another conforming runtime — Rust, C++,"
+                m1 = "This record is replayable. Another conforming runtime - Rust, C++,"
                 print(f"  {DIM(m1)}")
-                m2 = "a different machine — evaluating the same chain against the same context"
+                m2 = "a different machine - evaluating the same chain against the same context"
                 print(f"  {DIM(m2)}")
                 m3 = "will produce the same hashes. That's the basis for cross-system audit"
                 print(f"  {DIM(m3)}")
@@ -989,13 +1024,14 @@ def main() -> None:
                 print(f"    {GREEN('✓')} {DIM('A certificate with replayable hashes')}")
                 print(f"    {GREEN('✓')} {DIM('A conjunction gate with multiple predicates')}\n")
                 
-                print(f"  {DIM('Real gates often require multiple independent checks — sensor fusion,')}")
-                print(f"  {DIM('human clearance, temporal freshness — composed in a single auditable chain.')}\n")
+                print(f"  {DIM('Real gates often require multiple independent checks: sensor fusion,')}")
+                print(f"  {DIM('human clearance, temporal freshness, composed in a single auditable chain.')}\n")
                 
-                msg1 = "Type "
-                print(f"  {DIM(msg1)}:integrate{DIM(' for a copy-paste integration snippet,')}")
-                print(f"  {DIM('or ')}:scenarios{DIM(' to explore domain examples (zone entry, sensor fusion, belief vs knowledge),')}")
-                print(f"  {DIM('or ')}:negotiate{DIM(' to see two agents negotiate a shared safety decision (NIP-019).')}")
+                print(f"  {BOLD('What next?')}")
+                print(f"    {CYAN(':scenarios')}     More domain examples (zone entry, belief, negation)")
+                print(f"    {CYAN(':negotiate')}     Multi-agent context negotiation (NIP-019)")
+                print(f"    {CYAN(':integrate')}     Copy-paste Python integration snippet")
+                print(f"    {CYAN(':next')}          Full directory: docs, ROS2, threat model, contributing")
                 
         except Exception as exc:
             _print_parse_error(chain, exc)
