@@ -111,10 +111,10 @@ def _format_verdict(result: dict) -> str:
     if domain in ("action", "list"):
         target = ""
         if domain == "action" and isinstance(value, dict):
-            target = f"  → {value.get('target', '')}"
+            target = f"  -> {value.get('target', '')}"
         elif domain == "list" and isinstance(value, list):
             targets = [v.get("target", "") for v in value if isinstance(v, dict)]
-            target = f"  → {', '.join(t for t in targets if t)}"
+            target = f"  -> {', '.join(t for t in targets if t)}"
         return GREEN(f"PERMIT{target}")
 
     if domain == "truth":
@@ -143,7 +143,7 @@ def _node_name(node) -> str:
 
 
 def _render_parse_tree(node, indent: str = "", is_last: bool = True) -> list[str]:
-    branch = "└── " if is_last else "├── "
+    branch = "`-- " if is_last else "|-- "
     lines  = []
     if isinstance(node, Terminal):
         value = getattr(node, "value", "")
@@ -151,7 +151,7 @@ def _render_parse_tree(node, indent: str = "", is_last: bool = True) -> list[str
         return lines
     lines.append(f"{indent}{branch}{_node_name(node)}")
     children     = list(node) if isinstance(node, NonTerminal) else []
-    child_indent = indent + ("    " if is_last else "│   ")
+    child_indent = indent + ("    " if is_last else "|   ")
     for i, child in enumerate(children):
         lines.extend(_render_parse_tree(child, child_indent, i == len(children) - 1))
     return lines
@@ -172,12 +172,12 @@ from noe.explain import explain_result, print_context
 def _print_examples() -> None:
     print()
     print(BOLD("  Example chains:"))
-    print(DIM("  " + "─" * 60))
+    print(DIM("  " + "-" * 60))
     for i, (label, chain) in enumerate(EXAMPLES, start=1):
         print(f"  {i}. {label}")
         print(f"     {chain}")
         print(f"     {DIM(gloss_chain(chain))}")
-    print(DIM("  ─" * 30))
+    print(DIM("  " + "-" * 60))
     print(DIM("  Copy any chain above and paste it at the prompt."))
     print()
 
@@ -628,10 +628,10 @@ else:
         print(f"    {CYAN(ln)}")
     print("\n  " + DIM("The chain shown above is the one you last evaluated."))
     print("  " + DIM("Swap in your own predicates and actions.\n"))
-    print(f"  {DIM('── Next steps ──────────────────────────────────────────────')}")
+    print(f"  {DIM('-- Next steps ' + '-' * 48)}")
     print(f"  Ready to build? Start here: {CYAN('docs/quickstart_llm_governance.md')}")
     print(f"  For ROS2, threat model, or contributing: type {CYAN(':next')}")
-    print(f"  {DIM('───────────────────────────────────────────────────────────')}\n")
+    print(f"  {DIM('-' * 62)}\n")
 
 
 def _print_parse_error(chain: str, exc: Exception) -> None:
@@ -677,20 +677,20 @@ def _print_filtered_context(chain: str, ctx: dict) -> None:
         print_context(ctx)
         return
         
-    print(DIM("  ────────────────────────────────────────────────────────────"))
+    print(DIM("  " + "-" * 60))
     for lit in sorted(used_literals):
         is_literal = lit in ctx.get("literals", {})
         val = ctx.get("literals", {}).get(lit, "not_present")
         is_grounded = lit in ctx.get("modal", {}).get("knowledge", {})
         
         val_str = str(val).lower() if isinstance(val, bool) else str(val)
-        status = GREEN("✓ grounded") if is_grounded else YELLOW("literal only")
+        status = GREEN("[ok] grounded") if is_grounded else YELLOW("literal only")
 
         if not is_literal:
             print(f"    {lit:<28} {DIM('not in C_safe (undefined)')}")
         else:
             print(f"    {lit:<28} {val_str:<5}  {status}")
-    print(DIM("  ────────────────────────────────────────────────────────────"))
+    print(DIM("  " + "-" * 60))
     
     # We only want to show the 'grounded'/'literal only' explanation once
     if not getattr(_print_filtered_context, "has_run", False):
@@ -703,23 +703,21 @@ def _print_filtered_context(chain: str, ctx: dict) -> None:
 
 def main() -> None:
     welcome_screen = f"""
-{RED('▽ Noe Gate 1.0 (main) - Deterministic action gating.')}
-{BOLD(' ███    ██  ██████  ███████      ██████   █████  ████████ ███████')}
-{BOLD(' ████   ██ ██    ██ ██          ██       ██   ██    ██    ██     ')}
-{BOLD(' ██ ██  ██ ██    ██ █████       ██   ███ ███████    ██    █████  ')}
-{BOLD(' ██  ██ ██ ██    ██ ██          ██    ██ ██   ██    ██    ██     ')}
-{BOLD(' ██   ████  ██████  ███████      ██████  ██   ██    ██    ███████')}
-{RED('               ▽ NOE GATE ▽')}
+{RED('  NOE GATE 1.0 (main) - Deterministic action gating.')}
 
-{DIM('╭── Noe Gate ─────────────────────────────────────────────────────────╮')}
-{DIM('│')} Planners and LLMs propose actions. Noe Gate decides whether they    {DIM('│')}
-{DIM('│')} may execute. It checks grounded context, not trust, not intent.     {DIM('│')}
-{DIM('│')}                                                                     {DIM('│')}
-{DIM('│')} If the required knowledge is absent, execution does not pass.       {DIM('│')}
-{DIM('╰─────────────────────────────────────────────────────────────────────╯')}
+  {BOLD('  N   N  OOO  EEEEE       GGG   AAA  TTTTT EEEEE')}
+  {BOLD('  NN  N O   O E          G     A   A   T   E    ')}
+  {BOLD('  N N N O   O EEE   ---  G GGG AAAAA   T   EEE  ')}
+  {BOLD('  N  NN O   O E          G   G A   A   T   E    ')}
+  {BOLD('  N   N  OOO  EEEEE       GGG  A   A   T   EEEEE')}
 
-  [Enter] Start  
-{DIM('──────────────────────────────────────────────────────────────────────')}
+  Planners and LLMs propose actions. Noe Gate decides whether they
+  may execute. It checks grounded context, not trust, not intent.
+
+  If the required knowledge is absent, execution does not pass.
+
+  [Enter] Start
+{DIM('----------------------------------------------------------------------')}
 """
     try:
         a = input(welcome_screen)
@@ -774,7 +772,7 @@ def main() -> None:
 
             elif cmd == ":examples" or cmd == ":scenarios":
                 print("\n  " + BOLD("Domain Scenarios"))
-                print(DIM("  ────────────────────────────────────────────────────────────"))
+                print(DIM("  " + "-" * 60))
                 
                 print("  1. " + DIM("Multi-sensor zone entry (real-world):"))
                 print("     " + CYAN("shi @lidar_zone_clear an shi @camera_no_human an shi @estop_released khi sek mek @enter_zone_alpha sek nek"))
@@ -820,21 +818,21 @@ def main() -> None:
                 else:
                     mode = parts[1]
                     note = "(real Noe semantics - recommended)" if mode == "strict" else "(relaxed grounding)"
-                    print(DIM(f"  Mode → {mode} {note}"))
+                    print(DIM(f"  Mode -> {mode} {note}"))
 
             elif cmd == ":tree":
                 if len(parts) < 2 or parts[1] not in ("on", "off"):
                     print(RED("  Usage: :tree on | :tree off"))
                 else:
                     show_tree = (parts[1] == "on")
-                    print(DIM(f"  Parse tree → {'on' if show_tree else 'off'}"))
+                    print(DIM(f"  Parse tree -> {'on' if show_tree else 'off'}"))
 
             elif cmd == ":glyphs":
                 if len(parts) < 2 or parts[1] not in ("on", "off"):
                     print(RED("  Usage: :glyphs on | :glyphs off"))
                 else:
                     show_glyphs = (parts[1] == "on")
-                    print(DIM(f"  Glyphs → {'on' if show_glyphs else 'off'}"))
+                    print(DIM(f"  Glyphs -> {'on' if show_glyphs else 'off'}"))
 
             elif cmd == ":set":
                 if len(parts) < 3 or not parts[1].startswith("@"):
@@ -844,11 +842,11 @@ def main() -> None:
                     val_str = parts[2].lower()
                     if val_str in ("true", "1", "yes"):
                         _update_context(ctx, lit, True)
-                        print(GREEN(f"  {lit} → true (grounded)"))
+                        print(GREEN(f"  {lit} -> true (grounded)"))
                     elif val_str in ("false", "0", "no"):
                         _update_context(ctx, lit, False)
                         msg = "no longer admitted as known" if not first_eval_done or not first_block_done else "literal only, not grounded"
-                        print(YELLOW(f"  {lit} → false ({msg})"))
+                        print(YELLOW(f"  {lit} -> false ({msg})"))
                     else:
                         print(RED(f"  Unknown value '{val_str}'. Use true or false."))
 
@@ -867,14 +865,14 @@ def main() -> None:
                 _run_negotiate_demo()
 
             elif cmd == ":next":
-                print("\n  " + BOLD("── Where to go from here ──────────────────────────────────"))
+                print("\n  " + BOLD("-- Where to go from here " + "-" * 36))
                 print(f"  Python integration:    {CYAN('docs/quickstart_llm_governance.md')}")
                 print(f"  ROS2 adapter:          {CYAN('ros2_adapter/README.md')}")
                 print(f"  Threat model:          {CYAN('THREAT_MODEL.md')}")
                 print(f"  Conformance suite:     {CYAN('tests/nip011/README.md')}")
                 print(f"  Contribute:            {CYAN('github.com/noe-protocol/noe-gate/discussions')}")
                 print(f"  Issues:                {CYAN('github.com/noe-protocol/noe-gate/issues')}")
-                print(f"  {DIM('───────────────────────────────────────────────────────────')}\n")
+                print(f"  {DIM('-' * 62)}\n")
 
             elif cmd == ":cert":
                 import hashlib
@@ -887,12 +885,12 @@ def main() -> None:
                 dom = getattr(res_cert, "domain", "unknown").upper()
                 
                 print(f"  {BOLD('Certificate Record')}")
-                print(f"  {DIM('────────────────────────────────────────')}")
+                print(f"  {DIM('-' * 40)}")
                 print(f"    {DIM('context_hash:')}  {CYAN(ctx_hash)}")
                 print(f"    {DIM('chain_hash:')}    {CYAN(chash)}")
                 print(f"    {DIM('verdict:')}       {RED(dom) if dom == 'UNDEFINED' else GREEN(dom)}")
                 print(f"    {DIM('timestamp_ms:')}  {CYAN(str(ts))}")
-                print(f"  {DIM('────────────────────────────────────────')}")
+                print(f"  {DIM('-' * 40)}")
 
             else:
                 print(RED(f"  Unknown command '{cmd}'. Type :help."))
@@ -929,10 +927,10 @@ def main() -> None:
                 target = getattr(getattr(result, "value", None), "target", getattr(result, "value", ""))
                 if not target and isinstance(getattr(result, "value", None), dict):
                     target = result.value.get("target", "")
-                print(f"  {DIM('Verdict  :')}  {GREEN('PERMIT')} → {target}")
+                print(f"  {DIM('Verdict  :')}  {GREEN('PERMIT')} -> {target}")
             elif domain == "list":
                 targets = [v.get("target", "") for v in result.value if isinstance(v, dict)]
-                print(f"  {DIM('Verdict  :')}  {GREEN('PERMIT')} → {', '.join(targets)}")
+                print(f"  {DIM('Verdict  :')}  {GREEN('PERMIT')} -> {', '.join(targets)}")
             elif domain == "undefined":
                 missing_lits = []
                 for word in chain.split():
@@ -1019,10 +1017,10 @@ def main() -> None:
                 first_conjunction_done = True
                 hdr = "You've seen:"
                 print(f"\n  {BOLD(hdr)}")
-                print(f"    {GREEN('✓')} {DIM('A chain evaluate to PERMIT under grounded context')}")
-                print(f"    {GREEN('✓')} {DIM('The same chain BLOCK when grounding is removed')}")
-                print(f"    {GREEN('✓')} {DIM('A certificate with replayable hashes')}")
-                print(f"    {GREEN('✓')} {DIM('A conjunction gate with multiple predicates')}\n")
+                print(f"    {GREEN('[ok]')} {DIM('A chain evaluate to PERMIT under grounded context')}")
+                print(f"    {GREEN('[ok]')} {DIM('The same chain BLOCK when grounding is removed')}")
+                print(f"    {GREEN('[ok]')} {DIM('A certificate with replayable hashes')}")
+                print(f"    {GREEN('[ok]')} {DIM('A conjunction gate with multiple predicates')}\n")
                 
                 print(f"  {DIM('Real gates often require multiple independent checks: sensor fusion,')}")
                 print(f"  {DIM('human clearance, temporal freshness, composed in a single auditable chain.')}\n")
