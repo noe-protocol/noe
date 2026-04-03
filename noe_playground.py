@@ -26,6 +26,7 @@ Usage:
 import sys
 import os
 import time
+import shutil
 import readline  # enables arrow-key history
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -702,26 +703,47 @@ def _print_filtered_context(chain: str, ctx: dict) -> None:
 # ── Main REPL ─────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    welcome_screen = f"""
-  {RED('███    ██  ██████  ███████')}
-  {RED('████   ██ ██    ██ ██')}
-  {RED('██ ██  ██ ██    ██ █████')}
-  {RED('██  ██ ██ ██    ██ ██')}
-  {RED('██   ████  ██████  ███████')}
-  {DIM('GATE 1.0')}
+    print()
+    print(RED('  ███    ██  ██████  ███████'))
+    print(RED('  ████   ██ ██    ██ ██'))
+    print(RED('  ██ ██  ██ ██    ██ █████'))
+    print(RED('  ██  ██ ██ ██    ██ ██'))
+    print(RED('  ██   ████  ██████  ███████'))
+    print(DIM('  GATE 1.0'))
+    print()
 
-  Planners and LLMs propose actions.
-  Noe Gate decides whether they may execute.
-  It checks grounded context, not trust,
-  not intent.
+    # Dynamic box - adapts to terminal width
+    cols = shutil.get_terminal_size((80, 24)).columns
+    pad = 2                       # left indent
+    inner_min = 46                # minimum inner width
+    inner = max(inner_min, cols - pad - 4)  # 4 = '| ' + ' |'
 
-  If the required knowledge is absent,
-  execution does not pass.
+    lines = [
+        '',
+        'Planners and LLMs propose actions.',
+        'Noe Gate decides whether they may execute.',
+        'It checks grounded context,',
+        'not trust, not intent.',
+        '',
+        'If the required knowledge is absent,',
+        'execution does not pass.',
+        '',
+    ]
 
-  [Enter] Start
-"""
+    margin = ' ' * pad
+    print(DIM(margin + '+' + '-' * (inner + 2) + '+'))
+    for line in lines:
+        if line == '':
+            print(DIM(margin + '|' + ' ' * (inner + 2) + '|'))
+        else:
+            text = '  ' + line
+            text = text + ' ' * (inner - len(text))
+            print(DIM(margin + '| ') + text + DIM(' |'))
+    print(DIM(margin + '+' + '-' * (inner + 2) + '+'))
+
+    print()
     try:
-        a = input(welcome_screen)
+        input('  [Enter] Start  ')
     except (EOFError, KeyboardInterrupt):
         sys.exit(0)
     
