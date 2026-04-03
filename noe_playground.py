@@ -702,22 +702,25 @@ def _print_filtered_context(chain: str, ctx: dict) -> None:
 # ── Main REPL ─────────────────────────────────────────────────────────────────
 
 def main() -> None:
+    _banner = [
+        r' _  _  ___  ___    ___   _ _____ ___ ',
+        r'| \| |/ _ \| __|  / __| /_\_   _| __|',
+        r'| .` | (_) | _|  | (_ |/ _ \| | | _| ',
+        r'|_|\_|\___/|___|  \___/_/ \_\_| |___|',
+    ]
+    _banner_str = "\n".join("  " + RED(line) for line in _banner)
     welcome_screen = f"""
-{RED('  NOE GATE 1.0 (main) - Deterministic action gating.')}
+{_banner_str}
+  {DIM('1.0')}
 
-  {BOLD('  N   N  OOO  EEEEE       GGG   AAA  TTTTT EEEEE')}
-  {BOLD('  NN  N O   O E          G     A   A   T   E    ')}
-  {BOLD('  N N N O   O EEE   ---  G GGG AAAAA   T   EEE  ')}
-  {BOLD('  N  NN O   O E          G   G A   A   T   E    ')}
-  {BOLD('  N   N  OOO  EEEEE       GGG  A   A   T   EEEEE')}
+  Planners and LLMs propose actions.
+  Noe Gate decides whether they may execute.
+  It checks grounded context, not trust, not intent.
 
-  Planners and LLMs propose actions. Noe Gate decides whether they
-  may execute. It checks grounded context, not trust, not intent.
-
-  If the required knowledge is absent, execution does not pass.
+  If the required knowledge is absent,
+  execution does not pass.
 
   [Enter] Start
-{DIM('----------------------------------------------------------------------')}
 """
     try:
         a = input(welcome_screen)
