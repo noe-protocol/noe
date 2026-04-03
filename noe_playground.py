@@ -702,26 +702,51 @@ def _print_filtered_context(chain: str, ctx: dict) -> None:
 # ── Main REPL ─────────────────────────────────────────────────────────────────
 
 def main() -> None:
-    _banner = [
-        r' _  _  ___  ___    ___   _ _____ ___ ',
-        r'| \| |/ _ \| __|  / __| /_\_   _| __|',
-        r'| .` | (_) | _|  | (_ |/ _ \| | | _| ',
-        r'|_|\_|\___/|___|  \___/_/ \_\_| |___|',
+    W = 52  # inner box width
+    def _pad(s):
+        return s + " " * (W - len(s))
+
+    _logo = [
+        "███    ██  ██████  ███████",
+        "████   ██ ██    ██ ██     ",
+        "██ ██  ██ ██    ██ █████  ",
+        "██  ██ ██ ██    ██ ██     ",
+        "██   ████  ██████  ███████",
     ]
-    _banner_str = "\n".join("  " + RED(line) for line in _banner)
-    welcome_screen = f"""
-{_banner_str}
-  {DIM('1.0')}
 
-  Planners and LLMs propose actions.
-  Noe Gate decides whether they may execute.
-  It checks grounded context, not trust, not intent.
+    _box = []
+    _box.append("+" + "-" * W + "+")
+    for row in _logo:
+        p = (W - len(row)) // 2
+        _box.append("|" + " " * p + row + " " * (W - p - len(row)) + "|")
+    _box.append("|" + " " * W + "|")
+    _box.append("|" + _pad("  GATE  1.0") + "|")
+    _box.append("+" + "-" * W + "+")
+    _box.append("|" + " " * W + "|")
+    _box.append("|" + _pad("  Planners and LLMs propose actions.") + "|")
+    _box.append("|" + _pad("  Noe Gate decides whether they may execute.") + "|")
+    _box.append("|" + _pad("  It checks grounded context, not trust,") + "|")
+    _box.append("|" + _pad("  not intent.") + "|")
+    _box.append("|" + " " * W + "|")
+    _box.append("|" + _pad("  If the required knowledge is absent,") + "|")
+    _box.append("|" + _pad("  execution does not pass.") + "|")
+    _box.append("|" + " " * W + "|")
+    _box.append("+" + "-" * W + "+")
 
-  If the required knowledge is absent,
-  execution does not pass.
+    # Colorize: logo lines in red, box chrome in dim, text as-is
+    _colored = []
+    for line in _box:
+        inner = line[1:-1] if len(line) > 2 else ""
+        if any(c == "█" for c in inner):
+            _colored.append(DIM("|") + RED(inner) + DIM("|"))
+        elif line.startswith("+"):
+            _colored.append(DIM(line))
+        else:
+            _colored.append(DIM("|") + inner + DIM("|"))
+    _colored.append("")
+    _colored.append("  [Enter] Start")
 
-  [Enter] Start
-"""
+    welcome_screen = "\n  " + "\n  ".join(_colored) + "\n"
     try:
         a = input(welcome_screen)
     except (EOFError, KeyboardInterrupt):
